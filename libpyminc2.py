@@ -4,7 +4,8 @@ from ctypes import *
 from numpy import *
 
 # load the library
-libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
+#libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
+libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
 
 # some typedef definitions
 MI_DIMCLASS_SPATIAL = c_int(1)
