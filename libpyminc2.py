@@ -5,7 +5,43 @@ from numpy import *
 
 # load the library
 #libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
-libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
+#libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
+libminc = CDLL("/home/jlerch/linux-experimental/lib/libminc2.so")
+
+# sizes used by MINC and numpy
+# mincSizes contains all acceptable MINC datatype sizes. Each item has
+# four dictionary elements:
+# "minc"  -> the integer value used by get_hyperslab, etc.
+# "numpy" -> the dtype string to be used to create a numpy array of that size
+# "ctype" -> the ctypes function corresponding to that datatype
+# "min"   -> the minimum value the integer can contain
+# "max"   -> the maximum value the integer can contain
+minSigned = lambda x: -2**x/2
+maxSigned = lambda x: (2**x/2)-1
+maxUnsigned = lambda x: (2**x)-1
+mincSizes = {}
+mincSizes["byte"] = {"minc": 1, "numpy": "int8", "ctype": c_byte,
+		     "min": minSigned(8), "max": maxSigned(8),
+		     "type": "normalized"}
+mincSizes["short"] = {"minc": 3, "numpy": "int16", "ctype": c_short,
+		      "min": minSigned(16), "max": maxSigned(16),
+		      "type": "normalized"}
+mincSizes["int"] = {"minc": 4, "numpy": "int32", "ctype": c_int,
+		    "min": minSigned(32), "max": maxSigned(32),
+		    "type": "normalized"}
+mincSizes["float"] = {"minc": 5, "numpy": "float32", "ctype": c_float,
+		      "type": "real"}
+mincSizes["double"] = {"minc": 6, "numpy": "float64", "ctype": c_double,
+		       "type": "real"}
+mincSizes["ubyte"] = {"minc": 100, "numpy": "uint8", "ctype": c_ubyte,
+		      "min": 0, "max" : maxUnsigned(8),
+		      "type": "normalized"}
+mincSizes["ushort"] = {"minc": 101, "numpy": "uint16", "ctype": c_ushort,
+		       "min": 0, "max": maxUnsigned(16),
+		       "type": "normalized"}
+mincSizes["uint"] = {"minc": 102, "numpy": "unit32", "ctype": c_uint,
+		     "min": 0, "max": maxUnsigned(32),
+		     "type": "normalized"}
 
 # some typedef definitions
 MI_DIMCLASS_SPATIAL = c_int(1)
@@ -33,14 +69,16 @@ libminc.miget_real_value.argtypes = [mihandle, location, c_int, POINTER(voxel)]
 libminc.miget_volume_dimensions.argtypes = [mihandle, c_int, c_int, c_int,
 					    c_int, dimensions]
 libminc.miget_dimension_sizes.argtypes = [dimensions, c_int, int_sizes]
-libminc.miget_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
-					       long_sizes, POINTER(c_double)]
+#libminc.miget_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
+#					       long_sizes, POINTER(c_double)]
 libminc.micopy_dimension.argtypes = [c_void_p, POINTER(c_void_p)]
 libminc.micreate_volume.argtypes = [c_char_p, c_int, dimensions, c_int, c_int,
 				    c_void_p, POINTER(mihandle)]
 libminc.micreate_volume_image.argtypes = [mihandle]
 libminc.miset_volume_valid_range.argtypes = [mihandle, c_double, c_double]
 libminc.miset_volume_range.argtypes = [mihandle, c_double, c_double]
-libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
-					       long_sizes, POINTER(c_double)]
+#libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
+#					       long_sizes, POINTER(c_double)]
 libminc.miclose_volume.argtypes = [mihandle]
+libminc.miget_volume_dimension_count.argtypes = [mihandle, c_int, c_uint,
+						 POINTER(c_int)]
