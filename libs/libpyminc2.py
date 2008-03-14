@@ -4,9 +4,9 @@ from ctypes import *
 from numpy import *
 
 # load the library
-#libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
+libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
 #libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
-libminc = CDLL("/home/jlerch/linux-experimental/lib/libminc2.so")
+#libminc = CDLL("/home/jlerch/linux-experimental/lib/libminc2.so")
 
 # sizes used by MINC and numpy
 # mincSizes contains all acceptable MINC datatype sizes. Each item has
@@ -80,5 +80,6 @@ libminc.miset_volume_range.argtypes = [mihandle, c_double, c_double]
 #libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
 #					       long_sizes, POINTER(c_double)]
 libminc.miclose_volume.argtypes = [mihandle]
-libminc.miget_volume_dimension_count.argtypes = [mihandle, c_int, c_uint,
+libminc.miget_volume_dimension_count.argtypes = [mihandle, c_int, c_int,
 						 POINTER(c_int)]
+libminc.mifree_dimension_handle.argtypes = [c_void_p]
