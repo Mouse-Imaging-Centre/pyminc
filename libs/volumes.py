@@ -15,21 +15,24 @@ class mincVolume(object):
 	self.dataLoaded = False
 	if filename: self.openFile(filename)
     def getdata(self):
-	if self.dataLoaded:
-	    print "getting data"
-	    return self._data
-	else:
-	    print "data not loaded yet"
-	    return None
+        """called when data attribute requested"""
+        print "getting data"
+        if not self.dataLoaded:
+            self.loadData()
+            self.dataLoaded = True
+        return self._data
     def writeToFile(self):
 	pass
-    def loadData(self, dtype=None):
+    def loadData(self, dtype="float"):
+        """loads the data from file into the data attribute"""
         print "size", self.sizes[:]
         self._data = self.getHyperslab(int_sizes(), self.sizes[0:self.ndims], 
                                        dtype)
-	self._data.shape = self.sizes[0:3]
+	self._data.shape = self.sizes[0:self.ndims]
 	self.dataLoaded = True
-    def getHyperslab(self, start, count, dtype=None):
+        self.dtype = dtype
+    def getHyperslab(self, start, count, dtype="float"):
+        """given starts and counts returns the corresponding array"""
         print "count", count
         nstart = array(start[:self.ndims])
         ncount = array(count[:self.ndims])
@@ -40,12 +43,15 @@ class mincVolume(object):
         a = ascontiguousarray(zeros(size, dtype=mincSizes[dtype]["numpy"]))
         r = 0
         if dtype == "float" or dtype == "double":
+            # return real values if datatpye is floating point
             r = libminc.miget_real_value_hyperslab(
                 self.volPointer, 
                 mincSizes[dtype]["minc"],
                 start, count, 
                 a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+            
         else :
+            # return normalized values if datatype is integer
             r = libminc.miget_hyperslab_normalized(
                 self.volPointer,
                 mincSizes[dtype]["minc"],
@@ -56,6 +62,7 @@ class mincVolume(object):
         testMincReturn(r)
         return a
     def openFile(self, filename):
+        """reads information from MINC file"""
 	r = libminc.miopen_volume(filename, 1, self.volPointer)
         testMincReturn(r)
         ndims = c_int(0)
