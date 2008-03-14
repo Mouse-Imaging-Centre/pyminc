@@ -2,11 +2,13 @@
 
 # import minc definitions
 from libpyminc2 import *
+from volumes import *
 from scipy import weave
 from scipy.weave import converters
 from sys import argv
 import time
 
+               
 
 def minc_test(input, method, output):
    # create a new mihandle and open a volume
