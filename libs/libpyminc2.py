@@ -4,8 +4,8 @@ from ctypes import *
 from numpy import *
 
 # load the library
-libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
-#libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
+# libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
+libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
 #libminc = CDLL("/home/jlerch/linux-experimental/lib/libminc2.so")
 
 # sizes used by MINC and numpy

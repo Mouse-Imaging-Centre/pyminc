@@ -13,18 +13,23 @@ class mincVolume(object):
     def __init__(self, filename=None):
         self.volPointer = mihandle() # holds the pointer to the mihandle
         self.dims = dimensions()     # holds the actual pointers to dimensions
+        self.ndims = 0               # number of dimensions in this volume
         self.sizes = int_sizes()     # holds dimension sizes info
         self.dataLoadable = False    # we know enough about the file on disk to load data
         self.dataLoaded = False      # data sits inside the .data attribute
         self.dtype = "float"         # default datatype for array representation
-        if filename: self.openFile(filename)
+        self.filename = filename     # the filename associated with this volume
+        #self.zeros = True            # on first data access return array of zeros
     def getdata(self):
         """called when data attribute requested"""
         #print "getting data"
-        if not self.dataLoaded:
-            self.loadData()
-            self.dataLoaded = True
-        return self._data
+        if self.ndims > 0:
+            if not self.dataLoaded:
+                self.loadData()
+                self.dataLoaded = True
+            return self._data
+        else:
+            raise NoDataException
     def setdata(self, newdata):
         """sets the data attribute"""
         if newdata.shape != tuple(self.sizes[0:self.ndims]):
@@ -85,9 +90,9 @@ class mincVolume(object):
                 a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
         testMincReturn(r)
         return a
-    def openFile(self, filename):
+    def openFile(self):
         """reads information from MINC file"""
-        r = libminc.miopen_volume(filename, 1, self.volPointer)
+        r = libminc.miopen_volume(self.filename, 1, self.volPointer)
         testMincReturn(r)
         ndims = c_int(0)
         libminc.miget_volume_dimension_count(self.volPointer,
@@ -118,10 +123,10 @@ class mincVolume(object):
     def copyDtype(self, otherInstance):
         """copy the datatype to use for this instance from another instance"""
         self.dtype = otherInstance.dtype
-    def createVolumeHandle(self, filename):
+    def createVolumeHandle(self):
         """creates a new volume on disk"""
         self.volPointer = mihandle()
-        r = libminc.micreate_volume(filename, self.ndims, self.dims, 
+        r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 
                                     mincSizes[self.dtype]["minc"], MI_CLASS_REAL,
                                     None, self.volPointer)
         testMincReturn(r)
