@@ -10,19 +10,28 @@ def testMincReturn(value):
         raise mincException
 
 class mincVolume(object):
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, dtype="float"):
         self.volPointer = mihandle() # holds the pointer to the mihandle
         self.dims = dimensions()     # holds the actual pointers to dimensions
         self.ndims = 0               # number of dimensions in this volume
         self.sizes = int_sizes()     # holds dimension sizes info
         self.dataLoadable = False    # we know enough about the file on disk to load data
         self.dataLoaded = False      # data sits inside the .data attribute
-        self.dtype = "float"         # default datatype for array representation
+        self.dtype = dtype           # default datatype for array representation
         self.filename = filename     # the filename associated with this volume
-        #self.zeros = True            # on first data access return array of zeros
+
+    def getDtype(self, data):
+        """get the mincSizes datatype based on a numpy array"""
+        dtype = None
+        for type in mincSizes:
+            print "TYPE:", type, data.dtype
+            if mincSizes[type]["numpy"] == data.dtype:
+                dtype = type
+                break
+        return dtype
     def getdata(self):
         """called when data attribute requested"""
-        #print "getting data"
+        print "getting data"
         if self.ndims > 0:
             if not self.dataLoaded:
                 self.loadData()
@@ -32,23 +41,24 @@ class mincVolume(object):
             raise NoDataException
     def setdata(self, newdata):
         """sets the data attribute"""
+        print "setting data"
         if newdata.shape != tuple(self.sizes[0:self.ndims]):
             print "Shapes", newdata.shape, self.sizes[0:self.ndims]
             raise IncorrectDimsException
-        elif self.dataLoadable == False:
-            raise NoDataException
+        #elif self.dataLoadable == False:
+        #    raise NoDataException
         else:
             self._data = newdata
             self.dataLoaded = True
             print "New Shape:", self.data.shape
     def writeToFile(self):
         pass
-    def loadData(self, dtype="float"):
+    def loadData(self):
         """loads the data from file into the data attribute"""
         print "size", self.sizes[:]
         if self.dataLoadable:
             self._data = self.getHyperslab(int_sizes(), self.sizes[0:self.ndims], 
-                                           dtype)
+                                           self.dtype)
             self._data.shape = self.sizes[0:self.ndims]
             self.dataLoaded = True
             self.dtype = dtype
@@ -90,6 +100,34 @@ class mincVolume(object):
                 a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
         testMincReturn(r)
         return a
+    def setHyperslab(self, data, start):
+        """write hyperslab back to file"""
+        count = apply(long_sizes, data.shape)
+        start = apply(long_sizes, start)
+        # find the datatype map index
+        dtype = self.getDtype(data)
+        self.setVolumeRanges(data)
+        if dtype == "float" or dtype == "double":
+            r = libminc.miset_real_value_hyperslab(
+                    self.volPointer, mincSizes[dtype]["minc"],
+                    start, count,
+                    data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+            testMincReturn(r)
+        else:
+            raise "setting hyperslab with types other than float or byte not yet supported"
+    def writeFile(self):
+        """write the current data array to file"""
+        self.setHyperslab(self.data, zeros(self.ndims, dtype='uint8').tolist())
+    def setVolumeRanges(self, data):
+        """sets volume and voxel ranges"""
+        # ignore slice scaling for the moment
+        max = data.max()
+        min = data.min()
+        vmax = mincSizes[self.volumeType]["max"]
+        vmin = mincSizes[self.volumeType]["min"]
+        r = libminc.miset_volume_range(self.volPointer, max, min)
+        testMincReturn(r)
+        r = libminc.miset_volume_valid_range(self.volPointer, vmax, vmin)
     def openFile(self):
         """reads information from MINC file"""
         r = libminc.miopen_volume(self.filename, 1, self.volPointer)
@@ -102,16 +140,32 @@ class mincVolume(object):
         self.ndims = ndims.value
         r = libminc.miget_volume_dimensions(
             self.volPointer, MI_DIMCLASS_SPATIAL,
-            MI_DIMATTR_ALL, MI_DIMORDER_FILE,
+            MI_DIMATTR_ALL, MI_DIMORDER_APPARENT,
             ndims, self.dims)
         testMincReturn(r)
         r = libminc.miget_dimension_sizes(self.dims, ndims, self.sizes)
-        print "sizes", self.sizes[0:self.ndims]
         testMincReturn(r)
+        print "sizes", self.sizes[0:self.ndims]
+        seps = double_sizes()
+        r = libminc.miget_dimension_separations(self.dims, MI_DIMORDER_APPARENT,
+                                                self.ndims, seps)
+        testMincReturn(r)
+        self.separations = seps[0:self.ndims]
+        print "separations", self.separations
+        starts = double_sizes()
+        r = libminc.miget_dimension_starts(self.dims, MI_DIMORDER_APPARENT,
+                                           self.ndims, starts)
+        testMincReturn(r)
+        self.starts = starts[0:self.ndims]
+        print "starts", self.starts
+        
+        
         self.dataLoadable = True
     def copyDimensions(self, otherInstance):
         """create new local dimensions info copied from another instance"""
         self.ndims = c_int(otherInstance.ndims)
+        self.starts = otherInstance.starts
+        self.separations = otherInstance.separations
         tmpdims = range(self.ndims.value)
         for i in range(self.ndims.value):
             tmpdims[i] = c_void_p(0)
@@ -123,11 +177,12 @@ class mincVolume(object):
     def copyDtype(self, otherInstance):
         """copy the datatype to use for this instance from another instance"""
         self.dtype = otherInstance.dtype
-    def createVolumeHandle(self):
+    def createVolumeHandle(self, volumeType="ubyte"):
         """creates a new volume on disk"""
         self.volPointer = mihandle()
+        self.volumeType = volumeType
         r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 
-                                    mincSizes[self.dtype]["minc"], MI_CLASS_REAL,
+                                    mincSizes[volumeType]["minc"], MI_CLASS_REAL,
                                     None, self.volPointer)
         testMincReturn(r)
         r = libminc.miget_dimension_sizes(self.dims, self.ndims, self.sizes)
