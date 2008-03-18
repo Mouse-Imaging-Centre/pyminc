@@ -11,6 +11,7 @@ import os
 inputFilename = "/tmp/test.mnc"
 outputFilename = "/tmp/test-out.mnc"
 emptyFile = "/tmp/test-empty.mnc"
+inputVector = "/tmp/test-vector.mnc"
 
 class TestFromFile(unittest.TestCase):
     """test the volumeFromFile generator"""
@@ -115,6 +116,73 @@ class TestReadWrite(unittest.TestCase):
         va = N.average(v.data)
         self.assertAlmostEqual(va, oa, 1)
         
+class TestHyperslabs(unittest.TestCase):
+    """test getting and setting of hyperslabs"""
+    def testGetHyperslab(self):
+        """hyperslab should be same as slice from data array"""
+        v = volumeFromFile(inputFilename)
+        sliceFromData = v.data[10,:,:]
+        hyperslab = v.getHyperslab((10,0,0), (1, v.sizes[1], v.sizes[2]))
+        sa = N.average(sliceFromData)
+        ha = N.average(hyperslab)
+        v.closeVolume()
+        self.assertEqual(sa, ha)
+    def testHyperslabInfo(self):
+        """make sure that hyperslabs store enough info about themselves"""
+        v = volumeFromFile(inputFilename)
+        start = (10,0,0)
+        count = (1, v.sizes[1], v.sizes[2])
+        hyperslab = v.getHyperslab(start, count)
+        v.closeVolume()
+        self.assertEqual(hyperslab.start[1], start[1])
+    def testSetHyperslab(self):
+        """setting hyperslab should change underlying volume"""
+        v = volumeFromFile(inputFilename)
+        o = volumeFromInstance(v, outputFilename, data=False)
+        hyperslab = v.getHyperslab((10,0,0), (1, v.sizes[1], v.sizes[2]))
+        hyperslab = hyperslab * 100
+        o.setHyperslab(hyperslab, (10,0,0), (1, v.sizes[1], v.sizes[2]))
+        o.writeFile()
+        o.closeVolume()
+        v2 = volumeFromFile(outputFilename)
+        h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
+        v2.closeVolume()
+        self.assertAlmostEqual(N.average(hyperslab), N.average(h2), 1)
+    def testHyperslabArray(self):
+        """hyperslab should be reinsertable into volume"""
+        v = volumeFromFile(inputFilename)
+        o = volumeFromInstance(v, outputFilename, data=False)
+        hyperslab = v.getHyperslab((10,0,0), (1, v.sizes[1], v.sizes[2]))
+        hyperslab = hyperslab * 100
+        o.setHyperslab(hyperslab, (10,0,0))
+        o.writeFile()
+        o.closeVolume()
+        v2 = volumeFromFile(outputFilename)
+        h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
+        v2.closeVolume()
+        self.assertAlmostEqual(N.average(hyperslab), N.average(h2), 1)
+class testVectorFiles(unittest.TestCase):
+    """test reading and writing of vector files"""
+    def testVectorRead(self):
+        """make sure that a vector file can be read correctly"""
+        v = volumeFromFile(inputVector)
+        dimnames = v.dimnames
+        v.closeVolume()
+        self.assertEqual(dimnames[0], "vector_dimension")
+    def testVectorRead2(self):
+        """make sure that volume has four dimensions"""
+        v = volumeFromFile(inputVector)
+        ndims = v.ndims
+        v.closeVolume()
+        self.assertEqual(ndims, 4)
+    def testReduceDimensions(self):
+        """ensure that vector file can be turned into spatial volume"""
+        v = volumeFromFile(inputVector)
+        v2 = volumeFromInstance(v, outputFilename, dims=["xspace","yspace","zspace"])
+        ndims = v2.ndims
+        v.closeVolume()
+        v2.closeVolume()
+        self.assertEqual(ndims, 3)
 if __name__ == "__main__":
     unittest.main()
         

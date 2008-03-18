@@ -8,10 +8,11 @@ def volumeFromFile(filename, dtype="float"):
     v.openFile()
     return(v)
     
-def volumeFromInstance(volInstance, outputFilename, dtype="float", data=False):
+def volumeFromInstance(volInstance, outputFilename, dtype="float", data=False,
+                       dims=None):
     """creates new mincVolume from another mincVolume"""
     v = mincVolume(outputFilename, dtype)
-    v.copyDimensions(volInstance)
+    v.copyDimensions(volInstance, dims)
     v.copyDtype(volInstance)
     v.createVolumeHandle()
     if data:

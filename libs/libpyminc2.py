@@ -44,6 +44,7 @@ mincSizes["uint"] = {"minc": 102, "numpy": "unit32", "ctype": c_uint,
 		     "type": "normalized"}
 
 # some typedef definitions
+MI_DIMCLASS_ANY = c_int(0)
 MI_DIMCLASS_SPATIAL = c_int(1)
 MI_DIMATTR_ALL = c_int(0)
 
@@ -73,6 +74,7 @@ libminc.miget_real_value.argtypes = [mihandle, location, c_int, POINTER(voxel)]
 libminc.miget_volume_dimensions.argtypes = [mihandle, c_int, c_int, c_int,
 					    c_int, dimensions]
 libminc.miget_dimension_sizes.argtypes = [dimensions, c_int, int_sizes]
+libminc.miget_dimension_name.argtypes = [c_void_p, POINTER(c_char_p)]
 libminc.miget_dimension_separations.argtypes = [dimensions, c_int, c_int, 
 											    double_sizes]
 libminc.miget_dimension_starts.argtypes = [dimensions, c_int, c_int,
@@ -86,6 +88,7 @@ libminc.micreate_volume.argtypes = [c_char_p, c_int, dimensions, c_int, c_int,
 libminc.micreate_volume_image.argtypes = [mihandle]
 libminc.miset_volume_valid_range.argtypes = [mihandle, c_double, c_double]
 libminc.miset_volume_range.argtypes = [mihandle, c_double, c_double]
+libminc.miget_volume_range.argtypes = [mihandle, POINTER(c_double), POINTER(c_double)]
 #libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
 #					       long_sizes, POINTER(c_double)]
 libminc.miclose_volume.argtypes = [mihandle]
