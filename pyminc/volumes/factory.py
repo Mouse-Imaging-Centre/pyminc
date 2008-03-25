@@ -9,12 +9,12 @@ def volumeFromFile(filename, dtype="float"):
     return(v)
     
 def volumeFromInstance(volInstance, outputFilename, dtype="float", data=False,
-                       dims=None):
+                       dims=None, volumeType="ubyte"):
     """creates new mincVolume from another mincVolume"""
     v = mincVolume(outputFilename, dtype)
     v.copyDimensions(volInstance, dims)
     v.copyDtype(volInstance)
-    v.createVolumeHandle()
+    v.createVolumeHandle(volumeType)
     if data:
         if not volInstance.dataLoaded:
             volInstance.loadData()
@@ -23,9 +23,9 @@ def volumeFromInstance(volInstance, outputFilename, dtype="float", data=False,
     
     return(v)
 
-def volumeLikeFile(likeFilename, outputFilename, dtype="float"):
+def volumeLikeFile(likeFilename, outputFilename, dtype="float", volumeType="ubyte"):
     """creates a new mincVolume with dimension info taken from an existing file"""
     lf = volumeFromFile(likeFilename)
-    v = volumeFromInstance(lf, outputFilename, dtype)
+    v = volumeFromInstance(lf, outputFilename, dtype, volumeType=volumeType)
     lf.closeVolume()
     return(v)
