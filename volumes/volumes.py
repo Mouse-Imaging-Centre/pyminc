@@ -32,7 +32,7 @@ class mincVolume(object):
         return dtype
     def getdata(self):
         """called when data attribute requested"""
-        print "getting data"
+        #print "getting data"
         if self.ndims > 0:
             if not self.dataLoaded:
                 self.loadData()
@@ -127,7 +127,8 @@ class mincVolume(object):
         print "after setting of hyperslab"
     def writeFile(self):
         """write the current data array to file"""
-        self.setHyperslab(self.data, zeros(self.ndims, dtype='uint8').tolist())
+        self.setHyperslab(self.data, start=zeros(self.ndims, dtype='uint8').tolist(),
+                          count = self.sizes[0:self.ndims])
     def setVolumeRanges(self, data):
         """sets volume and voxel ranges"""
         # ignore slice scaling for the moment
