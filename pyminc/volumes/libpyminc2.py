@@ -46,7 +46,10 @@ mincSizes["uint"] = {"minc": 102, "numpy": "unit32", "ctype": c_uint,
 # some typedef definitions
 MI_DIMCLASS_ANY = c_int(0)
 MI_DIMCLASS_SPATIAL = c_int(1)
+MI_DIMCLASS_RECORD = c_int(6)
 MI_DIMATTR_ALL = c_int(0)
+MI_DIMATTR_REGULARLY_SAMPLED = c_int(1)
+
 
 MI_DIMORDER_FILE = c_int(0)
 MI_DIMORDER_APPARENT = c_int(0)
@@ -95,3 +98,6 @@ libminc.miclose_volume.argtypes = [mihandle]
 libminc.miget_volume_dimension_count.argtypes = [mihandle, c_int, c_int,
 						 POINTER(c_int)]
 libminc.mifree_dimension_handle.argtypes = [c_void_p]
+libminc.micreate_dimension.argtypes = [c_char_p, c_int, c_int, c_uint, POINTER(c_void_p)]
+libminc.miset_dimension_separation.argtypes = [c_void_p, c_double]
+libminc.miset_dimension_start.argtypes = [c_void_p, c_double]

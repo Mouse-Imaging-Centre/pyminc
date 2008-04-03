@@ -20,6 +20,7 @@ class mincVolume(object):
         self.dataLoaded = False      # data sits inside the .data attribute
         self.dtype = dtype           # default datatype for array representation
         self.filename = filename     # the filename associated with this volume
+        self.order = "C"
 
     def getDtype(self, data):
         """get the mincSizes datatype based on a numpy array"""
@@ -65,7 +66,7 @@ class mincVolume(object):
             self.dtype = dtype
         elif self.ndims > 0:
             length = reduce(operator.mul, self.sizes[0:self.ndims])
-            self._data = ascontiguousarray(zeros(length))
+            self._data = zeros(length, order=self.order)
             self._data.shape = self.sizes[0:self.ndims]
         else: 
             raise NoDataException
@@ -80,7 +81,7 @@ class mincVolume(object):
         count = apply(long_sizes, ncount[:])
         size = reduce(operator.mul, ncount)
         print nstart[:], ncount[:], size
-        a = HyperSlab(ascontiguousarray(zeros(size, dtype=mincSizes[dtype]["numpy"])), 
+        a = HyperSlab(zeros(size, dtype=mincSizes[dtype]["numpy"], order=self.order), 
                       start=nstart, count=ncount, separations=self.separations) 
         r = 0
         if dtype == "float" or dtype == "double":
@@ -240,6 +241,25 @@ class mincVolume(object):
         r = libminc.micreate_volume_image(self.volPointer)
         testMincReturn(r)
         self.dataLoadable = True
+    def createNewDimensions(self, dimnames, sizes, starts, steps):
+        """creates new dimensions for a new volume"""
+        self.ndims = len(dimnames)
+        tmpdims = range(self.ndims)
+        for i in range(self.ndims):
+            tmpdims[i] = c_void_p(0)
+            type = MI_DIMCLASS_SPATIAL
+            if dimnames[i] == "vector_dimension":
+                type = MI_DIMCLASS_RECORD
+            r = libminc.micreate_dimension(dimnames[i], type, MI_DIMATTR_REGULARLY_SAMPLED,
+                                           sizes[i], tmpdims[i])
+            testMincReturn(r)
+            if dimnames[i] != "vector_dimension":
+                r = libminc.miset_dimension_separation(tmpdims[i], steps[i])
+                testMincReturn(r)
+                r = libminc.miset_dimension_start(tmpdims[i], starts[i])
+                testMincReturn(r)
+        self.dims = apply(dimensions, tmpdims[0:self.ndims])
+        self.separations = steps
     def closeVolume(self):
         """close volume and release all pointer memory"""
         r = libminc.miclose_volume(self.volPointer)

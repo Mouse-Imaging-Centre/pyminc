@@ -1,6 +1,6 @@
 import unittest
-from volumes import mincException, mincVolume, NoDataException, IncorrectDimsException
-from factory import volumeFromFile, volumeFromInstance
+from volumes import *
+from factory import *
 import numpy as N
 import os
 
@@ -12,6 +12,7 @@ inputFilename = "/tmp/test.mnc"
 outputFilename = "/tmp/test-out.mnc"
 emptyFile = "/tmp/test-empty.mnc"
 inputVector = "/tmp/test-vector.mnc"
+newFile = "/tmp/new-volume.mnc"
 
 class TestFromFile(unittest.TestCase):
     """test the volumeFromFile generator"""
@@ -115,7 +116,21 @@ class TestReadWrite(unittest.TestCase):
         v = volumeFromFile(outputFilename)
         va = N.average(v.data)
         self.assertAlmostEqual(va, oa, 1)
-        
+
+class TestFromDescription(unittest.TestCase):
+    """testing creation of brand new volumes"""
+    def testCreateVolume(self):
+        """test whether new volume can be created"""
+        v = volumeFromDescription(newFile, ("xspace", "yspace", "zspace"), (10,20,30),
+                                  (-10,10,20), (0.5,0.5,0.5))
+        v.data[:,:,:] = 3
+        v.data[5,:,:] = 10
+        v.writeFile()
+        v.closeVolume()
+        o = volumeFromFile(newFile)
+        self.assertAlmostEqual(v.data.max(), 10, 3)
+
+
 class TestHyperslabs(unittest.TestCase):
     """test getting and setting of hyperslabs"""
     def testGetHyperslab(self):

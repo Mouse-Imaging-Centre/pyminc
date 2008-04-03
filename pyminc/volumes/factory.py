@@ -29,3 +29,12 @@ def volumeLikeFile(likeFilename, outputFilename, dtype="float", volumeType="ubyt
     v = volumeFromInstance(lf, outputFilename, dtype, volumeType=volumeType)
     lf.closeVolume()
     return(v)
+
+def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volumeType="ubyte",
+                          dtype="float"):
+    """creates a new mincVolume given starts, steps, sizes, and dimension names"""
+    v = mincVolume(outputFilename, dtype)
+    v.createNewDimensions(dimnames, sizes, starts, steps)
+    v.createVolumeHandle(volumeType)
+    v.createVolumeImage()
+    return(v)
