@@ -5,9 +5,9 @@ from ctypes.util import find_library
 from numpy import *
 
 # load the library
-minclocation = find_library("minc2")
-print "PYMINC: using", minclocation
-libminc = CDLL(minclocation)
+#minclocation = find_library("minc2")
+#print "PYMINC: using", minclocation
+libminc = CDLL("libminc2.so")
 #libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
 #libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
 #libminc = CDLL("/home/jlerch/linux-experimental/lib/libminc2.so")
