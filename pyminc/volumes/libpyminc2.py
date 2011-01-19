@@ -3,14 +3,21 @@
 from ctypes import *
 from ctypes.util import find_library
 from numpy import *
+import sys
 
 # load the library
 #minclocation = find_library("minc2")
 #print "PYMINC: using", minclocation
-libminc = CDLL("libminc2.so")
-#libminc = CDLL("/projects/mice/share/arch/linux64/lib/libminc2.so")
-#libminc = CDLL("/usr/local/minc2/lib/libminc2.dylib")
-#libminc = CDLL("/home/jlerch/linux-experimental/lib/libminc2.so")
+
+try:
+    libminc = cdll.LoadLibrary("libminc2.dylib")
+except OSError:
+    try:
+        libminc = cdll.LoadLibrary("libminc2.so")
+    except OSError:
+        sys.stderr.write("ERROR: Neither libminc2.so nor libminc2.dylib found on search path\n.")
+        sys.exit(3)
+
 
 # sizes used by MINC and numpy
 # mincSizes contains all acceptable MINC datatype sizes. Each item has
