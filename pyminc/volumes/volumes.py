@@ -85,8 +85,8 @@ class mincVolume(object):
             print "count", count
         nstart = array(start[:self.ndims])
         ncount = array(count[:self.ndims])
-        start = apply(long_sizes, nstart[:])
-        count = apply(long_sizes, ncount[:])
+        start = long_sizes(*start[:self.ndims])
+        count = long_sizes(*count[:self.ndims])
         size = reduce(operator.mul, ncount)
         if self.debug:
             print nstart[:], ncount[:], size
@@ -120,8 +120,8 @@ class mincVolume(object):
             count = data.count
         if not start:
             start = data.start
-        count = apply(long_sizes, count)
-        start = apply(long_sizes, start)
+        start = long_sizes(*start[:self.ndims])
+        count = long_sizes(*count[:self.ndims])
         # find the datatype map index
         dtype = self.getDtype(data)
         self.setVolumeRanges(data)

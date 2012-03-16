@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 # import minc definitions
-from libpyminc2 import *
-from volumes import *
+from pyminc.volumes.libpyminc2 import *
+from pyminc.volumes.volumes import *
 from scipy import weave
 from scipy.weave import converters
 from sys import argv
 import time
-
+from optparse import OptionParser
                
 
 def minc_test(input, method, output):
@@ -139,4 +139,16 @@ for (int x=1; x<nx-1; ++x) {
    libminc.miclose_volume(new_volume)
 
 if __name__ == "__main__":
+   #usage = "Perform some very basic operations using the pyminc library. Example usage:\n\npyminc_test2.py input_file.mnc [method] output_file.mnc \n\nWhere method can be: numpy, blitz or weave\n"
+   #description = "Description text"
+   #parser = OptionParser(usage=usage, description=description) 
+   #parser.add_option("--clobber", dest="clobber",
+   #                   help="clobber output file",
+   #                   type="string")
+   #args = parser.parse_args()
+   #print len(args)
+   print len(argv)
+   if len(argv) < 4:
+      print "Perform some very basic operations using the pyminc library. Example usage:\n\npyminc_test2.py input_file.mnc [method] output_file.mnc \n\nWhere method can be: numpy, blitz or weave\n"
+      exit(1)
    minc_test(argv[1], argv[2], argv[3])
