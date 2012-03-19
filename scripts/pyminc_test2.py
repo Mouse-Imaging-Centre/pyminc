@@ -125,9 +125,12 @@ for (int x=1; x<nx-1; ++x) {
    print "Creating new volume took %.5f seconds" % (time.clock() - starttime)
    print "before setting hyperslab"
    starttime = time.clock()
-   print narr[100,100,100]
-   print (((narr[100,100,100] - rmin)/(rmax-rmin)*(vmax*vmin)) + vmin)
-   print out_array[100,100,100], out_array.max(), out_array.min(), average(out_array)
+   dim_1 = s[0] - 1
+   dim_2 = s[1] - 1
+   dim_3 = s[2] - 1
+   print narr[dim_1,dim_2,dim_3]
+   print (((narr[dim_1,dim_2,dim_3] - rmin)/(rmax-rmin)*(vmax*vmin)) + vmin)
+   print out_array[dim_1,dim_2,dim_3], out_array.max(), out_array.min(), average(out_array)
    print narr.dtype, out_array.dtype
    print out_array
 #libminc.miset_real_value_hyperslab(new_volume, 4, start, count,
@@ -139,14 +142,6 @@ for (int x=1; x<nx-1; ++x) {
    libminc.miclose_volume(new_volume)
 
 if __name__ == "__main__":
-   #usage = "Perform some very basic operations using the pyminc library. Example usage:\n\npyminc_test2.py input_file.mnc [method] output_file.mnc \n\nWhere method can be: numpy, blitz or weave\n"
-   #description = "Description text"
-   #parser = OptionParser(usage=usage, description=description) 
-   #parser.add_option("--clobber", dest="clobber",
-   #                   help="clobber output file",
-   #                   type="string")
-   #args = parser.parse_args()
-   #print len(args)
    print len(argv)
    if len(argv) < 4:
       print "Perform some very basic operations using the pyminc library. Example usage:\n\npyminc_test2.py input_file.mnc [method] output_file.mnc \n\nWhere method can be: numpy, blitz or weave\n"
