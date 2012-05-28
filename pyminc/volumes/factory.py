@@ -9,7 +9,7 @@ def volumeFromFile(filename, dtype="float"):
     return(v)
     
 def volumeFromInstance(volInstance, outputFilename, dtype="float", data=False,
-                       dims=None, volumeType="ubyte"):
+                       dims=None, volumeType="ubyte", path=False):
     """creates new mincVolume from another mincVolume"""
     v = mincVolume(outputFilename, dtype)
     v.copyDimensions(volInstance, dims)
@@ -20,7 +20,9 @@ def volumeFromInstance(volInstance, outputFilename, dtype="float", data=False,
             volInstance.loadData()
         v.createVolumeImage()  
         v.data = volInstance.data.copy()
-    
+    if path:
+        v.copyAttributes(volInstance, path)
+
     return(v)
 
 def volumeLikeFile(likeFilename, outputFilename, dtype="float", volumeType="ubyte"):
