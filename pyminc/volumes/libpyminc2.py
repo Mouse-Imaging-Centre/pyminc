@@ -68,6 +68,7 @@ MI_DIMORDER_APPARENT = c_int(0)
 MI_TYPE_DOUBLE = c_int(6)
 MI_TYPE_UBYTE = c_int(100)
 MI_CLASS_REAL = c_int(0)
+MI_TYPE_STRING = c_int(7)
 
 # opaque minc structs can be represented as pointers
 mihandle = c_void_p
@@ -112,3 +113,12 @@ libminc.mifree_dimension_handle.argtypes = [c_void_p]
 libminc.micreate_dimension.argtypes = [c_char_p, c_int, c_int, c_uint, POINTER(c_void_p)]
 libminc.miset_dimension_separation.argtypes = [c_void_p, c_double]
 libminc.miset_dimension_start.argtypes = [c_void_p, c_double]
+
+#adding history to minc files
+libminc.miadd_history_attr.argtypes = [mihandle, c_int, c_void_p]
+# retrieve history of file to append to history of new file
+libminc.miget_attr_values.argtypes = [mihandle, c_int, c_char_p, c_char_p, c_int, c_void_p] 
+#apparent dimension order
+libminc.miset_apparent_dimension_order_by_name.argtypes = [mihandle, c_int, POINTER(c_char_p)]
+#copying attributes in path from one file to another
+libminc.micopy_attr.argtypes = [mihandle, c_char_p, mihandle]
