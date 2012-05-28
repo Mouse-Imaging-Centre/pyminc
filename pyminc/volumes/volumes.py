@@ -289,4 +289,34 @@ class mincVolume(object):
     def __getitem__(self, i): return self.data[i]
     #def __repr__(self): return self.data
     data = property(getdata,setdata,None,None)
+    
+    #adding history to minc files
+    def addHistory(self, size=None, history=None):
+        r = libminc.miadd_history_attr(self.volPointer, size, history)
+        testMincReturn(r)
+
+    #retrieve history of file 
+    def getHistory(self, size=1024, history=None):
+        history = create_string_buffer(size) 
+        r = libminc.miget_attr_values(self.volPointer, MI_TYPE_STRING, "", "history", len(history), history)
+        testMincReturn(r)
+        return history
+
+    # set apparent dimension orders
+    def setApparentDimensionOrder(self, size=None, name=[]):
+        array_type = c_char_p * size
+        names = array_type()
+        for i in range(size):
+            if (len(name.split(',')[i]) == 1):
+                names[i] = name.split(',')[i] + 'space'
+            else:
+                names[i] = name.split(',')[i]
+        r = libminc.miset_apparent_dimension_order_by_name(self.volPointer,size,names)
+        testMincReturn(r)
+    #copy attributes from path 
+    def copyAttributes(self, otherInstance, path=None):
+       	r = libminc.micopy_attr(otherInstance.volPointer, path, self.volPointer)
+        testMincReturn(r)
+
+
 
