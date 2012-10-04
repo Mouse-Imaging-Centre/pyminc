@@ -142,7 +142,7 @@ class mincVolume(object):
         self.setHyperslab(self.data, start=zeros(self.ndims, dtype='uint8').tolist(),
                           count = self.sizes[0:self.ndims])
     def setVolumeRanges(self, data):
-        """sets volume and voxel ranges"""
+        """sets volume and voxel ranges to use the maximum voxel range and the minumum necessary volume range.  This combination is makes optimal use of real valued data and integer volume types."""
         # ignore slice scaling for the moment
 
         count = reduce(operator.mul, data.shape)
@@ -166,11 +166,27 @@ class mincVolume(object):
                 min = data.min()
             else:
                 min = currentMin.value
+        # Note: this for float volumes it would be better to set the volume 
+        # and voxel range to be the same -- JGS
         vmax = mincSizes[self.volumeType]["max"]
         vmin = mincSizes[self.volumeType]["min"]
         r = libminc.miset_volume_range(self.volPointer, max, min)
         testMincReturn(r)
         r = libminc.miset_volume_valid_range(self.volPointer, vmax, vmin)
+        testMincReturn(r)
+
+    def setVolumeRange(self, data, volume_max, volume_min):
+        """This method sets the range (min and max) scale value for the volume. Note that this method only works if volume is not slice scaled."""
+        status = libminc.miset_volume_range(self.volPointer, \
+                                                volume_max, volume_min)
+        testMincReturn(status)
+
+    def setValidRange(self, data, valid_max, valid_min):
+        """This method sets the valid range (min and max) for the datatype."""
+        status = libminc.miset_volume_valid_range(self.volPointer, \
+                                                valid_max, valid_min)
+        testMincReturn(status)
+
     def openFile(self):
         """reads information from MINC file"""
         r = libminc.miopen_volume(self.filename, 1, self.volPointer)
@@ -318,5 +334,26 @@ class mincVolume(object):
        	r = libminc.micopy_attr(otherInstance.volPointer, path, self.volPointer)
         testMincReturn(r)
 
+    def convertVoxelToWorld(self, voxel):
+        """Convert voxel location to corresponding point in world coordinates. 
+        
+        voxel  : float array of length ndims
+        """
+        c_voxel = voxel_coord()
+        c_world = world_coord()
+        c_voxel[:self.ndims] = voxel
+        status = libminc.miconvert_voxel_to_world(self.volPointer, c_voxel, c_world)
+        testMincReturn(status)
+        return array(c_world[:])
 
-
+    def convertWorldToVoxel(self, world):
+        """Convert world location to corresponding point in voxel coordinates. 
+        
+        world  : float array of length 3
+        """
+        c_voxel = voxel_coord()
+        c_world = world_coord()
+        c_world[:] = world
+        status = libminc.miconvert_world_to_voxel(self.volPointer, c_world, c_voxel)
+        testMincReturn(status)
+        return array(c_voxel[:self.ndims])

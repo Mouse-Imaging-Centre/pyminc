@@ -81,6 +81,8 @@ location = c_ulong * 5
 int_sizes = c_int * 5
 long_sizes = c_ulong * 5
 double_sizes = c_double * 5
+voxel_coord = c_double * 5
+world_coord = c_double * 3
 
 # argument declarations - not really necessary but does make
 # segfaults a bit easier to avoid.
@@ -122,3 +124,8 @@ libminc.miget_attr_values.argtypes = [mihandle, c_int, c_char_p, c_char_p, c_int
 libminc.miset_apparent_dimension_order_by_name.argtypes = [mihandle, c_int, POINTER(c_char_p)]
 #copying attributes in path from one file to another
 libminc.micopy_attr.argtypes = [mihandle, c_char_p, mihandle]
+
+#voxel to world coordinate conversions
+libminc.miconvert_voxel_to_world.argtypes = [mihandle, voxel_coord, world_coord]
+libminc.miconvert_world_to_voxel.argtypes = [mihandle, world_coord, voxel_coord]
+
