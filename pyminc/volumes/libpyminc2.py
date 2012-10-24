@@ -83,6 +83,7 @@ long_sizes = c_ulong * 5
 double_sizes = c_double * 5
 voxel_coord = c_double * 5
 world_coord = c_double * 3
+mibool = c_int
 
 # argument declarations - not really necessary but does make
 # segfaults a bit easier to avoid.
@@ -104,8 +105,11 @@ libminc.micreate_volume.argtypes = [c_char_p, c_int, dimensions, c_int, c_int,
 				    c_void_p, POINTER(mihandle)]
 libminc.micreate_volume_image.argtypes = [mihandle]
 libminc.miset_volume_valid_range.argtypes = [mihandle, c_double, c_double]
+libminc.miget_volume_valid_range.argtypes = [mihandle, POINTER(c_double), POINTER(c_double)]
 libminc.miset_volume_range.argtypes = [mihandle, c_double, c_double]
 libminc.miget_volume_range.argtypes = [mihandle, POINTER(c_double), POINTER(c_double)]
+libminc.miget_slice_scaling_flag.argtypes = [mihandle, POINTER(mibool)]
+libminc.miset_slice_scaling_flag.argtypes = [mihandle, mibool]
 #libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
 #					       long_sizes, POINTER(c_double)]
 libminc.miclose_volume.argtypes = [mihandle]

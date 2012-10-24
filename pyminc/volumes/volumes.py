@@ -68,13 +68,10 @@ class mincVolume(object):
         if self.dataLoadable:
             self._data = self.getHyperslab(int_sizes(), self.sizes[0:self.ndims], 
                                            self.dtype)
-            self._data.shape = self.sizes[0:self.ndims]
             self.dataLoaded = True
             self.dtype = dtype
         elif self.ndims > 0:
-            length = reduce(operator.mul, self.sizes[0:self.ndims])
-            self._data = zeros(length, order=self.order)
-            self._data.shape = self.sizes[0:self.ndims]
+            self._data = zeros(self.sizes[0:self.ndims], order=self.order)
         else: 
             raise NoDataException
     def getHyperslab(self, start, count, dtype="float"):
@@ -87,10 +84,9 @@ class mincVolume(object):
         ncount = array(count[:self.ndims])
         start = long_sizes(*start[:self.ndims])
         count = long_sizes(*count[:self.ndims])
-        size = reduce(operator.mul, ncount)
         if self.debug:
             print nstart[:], ncount[:], size
-        a = HyperSlab(zeros(size, dtype=mincSizes[dtype]["numpy"], order=self.order), 
+        a = HyperSlab(zeros(ncount, dtype=mincSizes[dtype]["numpy"], order=self.order), 
                       start=nstart, count=ncount, separations=self.separations) 
         r = 0
         if dtype == "float" or dtype == "double":
@@ -134,7 +130,7 @@ class mincVolume(object):
                     data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
             testMincReturn(r)
         else:
-            raise "setting hyperslab with types other than float or byte not yet supported"
+            raise "setting hyperslab with types other than float or double not yet supported"
         if self.debug:
             print "after setting of hyperslab"
     def writeFile(self):
@@ -166,7 +162,7 @@ class mincVolume(object):
                 min = data.min()
             else:
                 min = currentMin.value
-        # Note: this for float volumes it would be better to set the volume 
+        # Note: for float volumes it would be better to set the volume 
         # and voxel range to be the same -- JGS
         vmax = mincSizes[self.volumeType]["max"]
         vmin = mincSizes[self.volumeType]["min"]
@@ -175,17 +171,58 @@ class mincVolume(object):
         r = libminc.miset_volume_valid_range(self.volPointer, vmax, vmin)
         testMincReturn(r)
 
-    def setVolumeRange(self, data, volume_max, volume_min):
+    def setVolumeRange(self, volume_max, volume_min):
         """This method sets the range (min and max) scale value for the volume. Note that this method only works if volume is not slice scaled."""
         status = libminc.miset_volume_range(self.volPointer, \
                                                 volume_max, volume_min)
         testMincReturn(status)
 
-    def setValidRange(self, data, valid_max, valid_min):
+    def getVolumeRange(self):
+        """This method gets the range (min and max) scale value for the volume. Note that this method only works if volume is not slice scaled."""
+        volume_max, volume_min = c_double(), c_double()
+        status = libminc.miget_volume_range(self.volPointer, \
+                                    byref(volume_max), byref(volume_min))
+        testMincReturn(status)
+        return (volume_max.value, volume_min.value)
+
+    def isSliceScaled(self):
+        "return slice_scaling_flag for volume"
+        scaling_flag = mibool()
+        status = libminc.miget_slice_scaling_flag(self.volPointer, \
+                                    byref(scaling_flag))
+        testMincReturn(status)
+        return scaling_flag.value
+        
+
+    def setValidRange(self, valid_max, valid_min):
         """This method sets the valid range (min and max) for the datatype."""
         status = libminc.miset_volume_valid_range(self.volPointer, \
                                                 valid_max, valid_min)
         testMincReturn(status)
+
+    def getValidRange(self):
+        """This method sets the valid range for the volume datatype"""
+        valid_max, valid_min = c_double(), c_double()
+        status = libminc.miget_volume_valid_range(self.volPointer, \
+                                    byref(valid_max), byref(valid_min))
+        testMincReturn(status)
+        return (valid_max.value, valid_min.value)
+    
+    def getSizes(self):
+        "return volume sizes"
+        return self.sizes[:self.ndims]
+
+    def getSeparations(self):
+        "return volume separations"
+        return self.separations[:self.ndims]
+
+    def getStarts(self):
+        "return volume starts"
+        return self.starts[:self.ndims]
+
+    def getDimensionNames(self):
+        "return volume dimension names"
+        return self.dimnames
 
     def openFile(self):
         """reads information from MINC file"""

@@ -3,7 +3,7 @@
 from volumes import mincException,mincVolume
 
 def volumeFromFile(filename, dtype="float"):
-    """creates a new mincVolume from existing file"""
+    """creates a new mincVolume from existing file."""
     v = mincVolume(filename, dtype)
     v.openFile()
     return(v)
