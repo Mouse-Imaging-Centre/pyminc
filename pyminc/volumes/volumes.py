@@ -12,7 +12,7 @@ def testMincReturn(value):
         raise mincException
 
 class mincVolume(object):
-    def __init__(self, filename=None, dtype="float"):
+    def __init__(self, filename=None, dtype="float", readonly=True):
         self.volPointer = mihandle() # holds the pointer to the mihandle
         self.dims = dimensions()     # holds the actual pointers to dimensions
         self.ndims = 0               # number of dimensions in this volume
@@ -21,6 +21,7 @@ class mincVolume(object):
         self.dataLoaded = False      # data sits inside the .data attribute
         self.dtype = dtype           # default datatype for array representation
         self.filename = filename     # the filename associated with this volume
+        self.readonly = readonly     # flag indicating that volume is for reading only
         self.order = "C"
         self.debug = os.environ.has_key("PYMINCDEBUG")
 
@@ -34,6 +35,7 @@ class mincVolume(object):
                 dtype = type
                 break
         return dtype
+
     def getdata(self):
         """called when data attribute requested"""
         #print "getting data"
@@ -44,6 +46,7 @@ class mincVolume(object):
             return self._data
         else:
             raise NoDataException
+
     def setdata(self, newdata):
         """sets the data attribute"""
         if self.debug:
@@ -59,8 +62,7 @@ class mincVolume(object):
             self.dataLoaded = True
             if self.debug:
                 print "New Shape:", self.data.shape
-    def writeToFile(self):
-        pass
+
     def loadData(self):
         """loads the data from file into the data attribute"""
         if self.debug:
@@ -74,69 +76,102 @@ class mincVolume(object):
             self._data = zeros(self.sizes[0:self.ndims], order=self.order)
         else: 
             raise NoDataException
+
     def getHyperslab(self, start, count, dtype="float"):
-        """given starts and counts returns the corresponding array"""
+        """given starts and counts returns the corresponding array.  This is read either from memory or disk depending on the state of the dataLoaded variable."""
+
         if self.dataLoadable == False:
             raise NoDataException
-        if self.debug:
-            print "count", count
-        nstart = array(start[:self.ndims])
-        ncount = array(count[:self.ndims])
-        start = long_sizes(*start[:self.ndims])
-        count = long_sizes(*count[:self.ndims])
-        if self.debug:
-            print nstart[:], ncount[:], size
-        a = HyperSlab(zeros(ncount, dtype=mincSizes[dtype]["numpy"], order=self.order), 
-                      start=nstart, count=ncount, separations=self.separations) 
-        r = 0
-        if dtype == "float" or dtype == "double":
-            # return real values if datatpye is floating point
-            r = libminc.miget_real_value_hyperslab(
-                self.volPointer, 
-                mincSizes[dtype]["minc"],
-                start, count, 
-                a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
-            
-        else :
-            # return normalized values if datatype is integer
-            r = libminc.miget_hyperslab_normalized(
-                self.volPointer,
-                mincSizes[dtype]["minc"],
-                start, count,
-                c_double(mincSizes[dtype]["min"]),
-                c_double(mincSizes[dtype]["max"]),
-                a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
-        testMincReturn(r)
+
+        start = array(start[:self.ndims])
+        count = array(count[:self.ndims])
+
+        a = HyperSlab(zeros(count, dtype=mincSizes[dtype]["numpy"], order=self.order), 
+                      start=start, count=count, separations=self.separations) 
+
+        if self.dataLoaded:
+            slices = map(lambda x, y: slice(x, x+y), start, count)
+            if dtype == "float" or dtype == "double":
+                a[...] = self.data[slices]
+            else:
+                raise RuntimeError, "get hyperslab for integer datatypes not yet implements"+\
+                    " when volume is already loaded into memory"
+        else:  # if data not already loaded
+            ctype_start = long_sizes(*start)
+            ctype_count = long_sizes(*count)
+            if self.debug:
+                print start[:], count[:], size
+            r = 0
+            if dtype == "float" or dtype == "double":
+                # return real values if datatpye is floating point
+                r = libminc.miget_real_value_hyperslab(
+                    self.volPointer, 
+                    mincSizes[dtype]["minc"],
+                    ctype_start, ctype_count, 
+                    a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+            else :
+                # return normalized values if datatype is integer
+                r = libminc.miget_hyperslab_normalized(
+                    self.volPointer,
+                    mincSizes[dtype]["minc"],
+                    ctype_start, ctype_count,
+                    c_double(mincSizes[dtype]["min"]),
+                    c_double(mincSizes[dtype]["max"]),
+                    a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+            testMincReturn(r)
         return a
+
     def setHyperslab(self, data, start=None, count=None):
         """write hyperslab back to file"""
+
+        if self.readonly:
+            raise IOError, "Writing to file %s which has been opened in readonly mode" % self.filename
         if not self.dataLoadable:
             self.createVolumeImage() 
         if not count:
             count = data.count
         if not start:
             start = data.start
-        start = long_sizes(*start[:self.ndims])
-        count = long_sizes(*count[:self.ndims])
-        # find the datatype map index
-        dtype = self.getDtype(data)
-        self.setVolumeRanges(data)
-        if self.debug:
-            print "before setting of hyperslab"
-        if dtype == "float" or dtype == "double":
-            r = libminc.miset_real_value_hyperslab(
-                    self.volPointer, mincSizes[dtype]["minc"],
-                    start, count,
-                    data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
-            testMincReturn(r)
-        else:
-            raise "setting hyperslab with types other than float or double not yet supported"
-        if self.debug:
-            print "after setting of hyperslab"
+            
+        if self.dataLoaded:
+            slices = map(lambda x, y: slice(x, x+y), start, count)
+            self.data[slices] = data
+        else: # if data is not in memory write hyperslab to disk
+            ctype_start = long_sizes(*start[:self.ndims])
+            ctype_count = long_sizes(*count[:self.ndims])
+            # find the datatype map index
+            dtype = self.getDtype(data)
+            self.setVolumeRanges(data)
+            if self.debug:
+                print "before setting of hyperslab"
+            if dtype == "float" or dtype == "double":
+                r = libminc.miset_real_value_hyperslab(
+                        self.volPointer, mincSizes[dtype]["minc"],
+                        ctype_start, ctype_count,
+                        data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+                testMincReturn(r)
+            else:
+                raise "setting hyperslab with types other than float or double not yet supported"
+            if self.debug:
+                print "after setting of hyperslab"
+
     def writeFile(self):
         """write the current data array to file"""
-        self.setHyperslab(self.data, start=zeros(self.ndims, dtype='uint8').tolist(),
-                          count = self.sizes[0:self.ndims])
+        if self.readonly:
+            raise IOError, "Writing to file %s which has been opened in readonly mode" % self.filename
+        if not self.dataLoadable:  # if file doesn't yet exist on disk
+            self.createVolumeImage() 
+        if self.dataLoaded:  # only write if data is in memory
+            # find the datatype map index
+            dtype = self.getDtype(self._data)
+            self.setVolumeRanges(self._data)
+            r = libminc.miset_real_value_hyperslab(
+                self.volPointer, mincSizes[dtype]["minc"],
+                long_sizes(), long_sizes(*self.sizes[:]),
+                self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+            testMincReturn(r)
+
+
     def setVolumeRanges(self, data):
         """sets volume and voxel ranges to use the maximum voxel range and the minumum necessary volume range.  This combination is makes optimal use of real valued data and integer volume types."""
         # ignore slice scaling for the moment
@@ -226,7 +261,8 @@ class mincVolume(object):
 
     def openFile(self):
         """reads information from MINC file"""
-        r = libminc.miopen_volume(self.filename, 1, self.volPointer)
+        r = libminc.miopen_volume(self.filename, (MI2_OPEN_RDWR, MI2_OPEN_READ)[self.readonly],
+                                  self.volPointer)
         testMincReturn(r)
         ndims = c_int(0)
         libminc.miget_volume_dimension_count(self.volPointer,
@@ -331,16 +367,29 @@ class mincVolume(object):
                 testMincReturn(r)
         self.dims = apply(dimensions, tmpdims[0:self.ndims])
         self.separations = steps
+
     def closeVolume(self):
         """close volume and release all pointer memory"""
-        r = libminc.miclose_volume(self.volPointer)
-        testMincReturn(r)
-        for i in range(self.ndims):
-            r = libminc.mifree_dimension_handle(self.dims[i])
+        if self.volPointer is not None:  # avoid freeing memory twice
+            r = libminc.miclose_volume(self.volPointer)
             testMincReturn(r)
+            self.volPointer = None  
+
+        for i in range(self.ndims):
+            if self.dims[i] is not None:
+                r = libminc.mifree_dimension_handle(self.dims[i])
+                testMincReturn(r)
+                self.dims[i] = None
         self.dataLoadable = False
-    def __getitem__(self, i): return self.data[i]
-    #def __repr__(self): return self.data
+
+    def __getitem__(self, i): 
+        return self.data[i]
+
+    def __del__(self):
+        "close file and release memory from libminc"
+        self.closeVolume()
+
+    # define access functions for getting and setting the data attribute
     data = property(getdata,setdata,None,None)
     
     #adding history to minc files
