@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='pyminc',
-      version = '0.2.1',
+      version = '0.2.2',
       author = "Jason Lerch",
       author_email = "jason@phenogenomics.ca",
       packages = ['pyminc', 'pyminc.volumes'],
