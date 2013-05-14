@@ -398,7 +398,7 @@ class mincVolume(object):
         testMincReturn(r)
 
     #retrieve history of file 
-    def getHistory(self, size=1024, history=None):
+    def getHistory(self, size, history=None):
         history = create_string_buffer(size) 
         r = libminc.miget_attr_values(self.volPointer, MI_TYPE_STRING, "", "history", len(history), history)
         testMincReturn(r)
