@@ -50,7 +50,7 @@ mincSizes["ubyte"] = {"minc": 100, "numpy": "uint8", "ctype": c_ubyte,
 mincSizes["ushort"] = {"minc": 101, "numpy": "uint16", "ctype": c_ushort,
 		       "min": 0, "max": maxUnsigned(16),
 		       "type": "normalized"}
-mincSizes["uint"] = {"minc": 102, "numpy": "unit32", "ctype": c_uint,
+mincSizes["uint"] = {"minc": 102, "numpy": "uint32", "ctype": c_uint,
 		     "min": 0, "max": maxUnsigned(32),
 		     "type": "normalized"}
 
@@ -80,13 +80,15 @@ midimhandle = c_void_p
 # some type information
 dimensions = c_void_p * 5
 voxel = c_double
-location = c_ulong * 5
-int_sizes = c_int * 5
+location = c_ulonglong * 5
+int_sizes = c_ulonglong * 5
 long_sizes = c_ulong * 5
+misize_t_sizes = c_ulonglong * 5
 double_sizes = c_double * 5
 voxel_coord = c_double * 5
 world_coord = c_double * 3
 mibool = c_int
+misize_t = c_ulonglong
 
 # argument declarations - not really necessary but does make
 # segfaults a bit easier to avoid.
@@ -94,15 +96,15 @@ libminc.miopen_volume.argtypes = [c_char_p, c_int, POINTER(mihandle)]
 libminc.miget_real_value.argtypes = [mihandle, location, c_int, POINTER(voxel)]
 libminc.miget_volume_dimensions.argtypes = [mihandle, c_int, c_int, c_int,
 					    c_int, dimensions]
-libminc.miget_dimension_sizes.argtypes = [dimensions, c_int, int_sizes]
+libminc.miget_dimension_sizes.argtypes = [dimensions, misize_t, int_sizes]
 libminc.miget_dimension_name.argtypes = [c_void_p, POINTER(c_char_p)]
-libminc.miget_dimension_separations.argtypes = [dimensions, c_int, c_int, 
+libminc.miget_dimension_separations.argtypes = [dimensions, c_int, misize_t, 
 											    double_sizes]
-libminc.miget_dimension_starts.argtypes = [dimensions, c_int, c_int,
+libminc.miget_dimension_starts.argtypes = [dimensions, c_int, misize_t,
 										   double_sizes]
 										  
-#libminc.miget_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
-#					       long_sizes, POINTER(c_double)]
+#libminc.miget_real_value_hyperslab.argtypes = [mihandle, c_int, misize_t_sizes,
+#					       misize_t_sizes, POINTER(c_double)]
 libminc.micopy_dimension.argtypes = [c_void_p, POINTER(c_void_p)]
 libminc.micreate_volume.argtypes = [c_char_p, c_int, dimensions, c_int, c_int,
 				    c_void_p, POINTER(mihandle)]
@@ -113,20 +115,20 @@ libminc.miset_volume_range.argtypes = [mihandle, c_double, c_double]
 libminc.miget_volume_range.argtypes = [mihandle, POINTER(c_double), POINTER(c_double)]
 libminc.miget_slice_scaling_flag.argtypes = [mihandle, POINTER(mibool)]
 libminc.miset_slice_scaling_flag.argtypes = [mihandle, mibool]
-#libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, long_sizes,
-#					       long_sizes, POINTER(c_double)]
+#libminc.miset_real_value_hyperslab.argtypes = [mihandle, c_int, misize_t_sizes,
+#					       misize_t_sizes, POINTER(c_double)]
 libminc.miclose_volume.argtypes = [mihandle]
 libminc.miget_volume_dimension_count.argtypes = [mihandle, c_int, c_int,
 						 POINTER(c_int)]
 libminc.mifree_dimension_handle.argtypes = [c_void_p]
-libminc.micreate_dimension.argtypes = [c_char_p, c_int, c_int, c_uint, POINTER(c_void_p)]
+libminc.micreate_dimension.argtypes = [c_char_p, c_int, c_int, misize_t, POINTER(c_void_p)]
 libminc.miset_dimension_separation.argtypes = [c_void_p, c_double]
 libminc.miset_dimension_start.argtypes = [c_void_p, c_double]
 
 #adding history to minc files
-libminc.miadd_history_attr.argtypes = [mihandle, c_int, c_void_p]
+libminc.miadd_history_attr.argtypes = [mihandle, c_uint, c_void_p]
 # retrieve history of file to append to history of new file
-libminc.miget_attr_values.argtypes = [mihandle, c_int, c_char_p, c_char_p, c_int, c_void_p] 
+libminc.miget_attr_values.argtypes = [mihandle, c_int, c_char_p, c_char_p, c_uint, c_void_p] 
 #apparent dimension order
 libminc.miset_apparent_dimension_order_by_name.argtypes = [mihandle, c_int, POINTER(c_char_p)]
 #copying attributes in path from one file to another
