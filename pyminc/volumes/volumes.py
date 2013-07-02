@@ -320,7 +320,7 @@ class mincVolume(object):
             self.dimnames.append(name.value)
         if self.debug:
             print "dimnames:", self.dimname
-        self.history = self.getHistory(size=10000)
+        self.history = self.getHistory(size=999999)
         
         
         self.dataLoadable = True
