@@ -43,5 +43,4 @@ def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volume
     v.createNewDimensions(dimnames, sizes, starts, steps)
     v.createVolumeHandle(volumeType)
     v.createVolumeImage()
-    v.createHistory()
     return(v)

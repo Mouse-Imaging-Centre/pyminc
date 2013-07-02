@@ -2,6 +2,7 @@ from libpyminc2 import *
 from hyperslab import HyperSlab
 import operator
 import os
+import sys
 import datetime as datetime
 
 class mincException(Exception): pass
@@ -25,7 +26,7 @@ class mincVolume(object):
         self.filename = filename     # the filename associated with this volume
         self.readonly = readonly     # flag indicating that volume is for reading only
         self.labels = labels         # whether it contains labels - affects how ranges are set
-        self.history = None          # string holding the history information of the file 
+        self.history = create_string_buffer("") # string holding the history information of the file (type = ctypes array of c_char)
         self.historyupdated = False  # does the history contain information about what pyminc has done?
         self.order = "C"
         self.debug = os.environ.has_key("PYMINCDEBUG")
@@ -169,10 +170,8 @@ class mincVolume(object):
         if self.readonly:
             raise IOError, "Writing to file %s which has been opened in readonly mode" % self.filename
         if not self.historyupdated:
-            print "Warning: the history of the file being written to disk has not been properly updated about the pyminc related changes...\n"
-            # add a note to the history of the minc file that pyminc has been used
-            additionToHistory = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ">>> modified using pyminc"
-            self.appendAndWriteHistory(history=additionToHistory)
+            addToHist = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " >>> (default history added after pyminc usage) " + " ".join(sys.argv)
+            self.appendAndWriteHistory(history=addToHist)
         if not self.dataLoadable:  # if file doesn't yet exist on disk
             self.createVolumeImage() 
         if self.dataLoaded:  # only write if data is in memory
@@ -377,13 +376,6 @@ class mincVolume(object):
         r = libminc.micreate_volume_image(self.volPointer)
         testMincReturn(r)
         self.dataLoadable = True
-        
-    def createHistory(self):
-        """ this function is invoked for instance with volumeFromDescription to create an initial history """
-        tmphistorystring = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + ">>> created using pyminc"
-        # make sure that the history attribute always has the same type (ctypes array of c_char)
-        self.history = create_string_buffer(tmphistorystring)
-        self.historyupdated = True
         
     def createNewDimensions(self, dimnames, sizes, starts, steps):
         """creates new dimensions for a new volume"""
