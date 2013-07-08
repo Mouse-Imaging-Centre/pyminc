@@ -436,6 +436,10 @@ class mincVolume(object):
         history = create_string_buffer(size) 
         r = libminc.miget_attr_values(self.volPointer, MI_TYPE_STRING, "", "history", len(history), history)
         testMincReturn(r)
+        # add a new line to the history to ensure that this command is seen as a new
+        # command in the MINC history (i.e., is not simply concatenated into a big
+        # long string)
+        history.value = history.value + "\n"
         return history
 
     # set apparent dimension orders
