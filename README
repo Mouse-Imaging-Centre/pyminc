@@ -3,6 +3,12 @@ access MINC data, and other such similar goodies developed by Jason Lerch.
 
 *****
 
+Documentation can be found in the tutorial section of the MINC Wikibooks (Programming with MINC2 in python):
+
+http://en.wikibooks.org/wiki/MINC/Tutorials
+
+*****
+
 Requirements:
 
 Pyminc requires numpy (the python numerical arrays package) to work. Also, it needs 
