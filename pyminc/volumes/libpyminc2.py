@@ -82,6 +82,7 @@ dimensions = c_void_p * 5
 voxel = c_double
 location = c_ulonglong * 5
 int_sizes = c_ulonglong * 5
+uint_sizes = c_uint * 5
 long_sizes = c_ulong * 5
 misize_t_sizes = c_ulonglong * 5
 double_sizes = c_double * 5
@@ -96,7 +97,7 @@ libminc.miopen_volume.argtypes = [c_char_p, c_int, POINTER(mihandle)]
 libminc.miget_real_value.argtypes = [mihandle, location, c_int, POINTER(voxel)]
 libminc.miget_volume_dimensions.argtypes = [mihandle, c_int, c_int, c_int,
 					    c_int, dimensions]
-libminc.miget_dimension_sizes.argtypes = [dimensions, misize_t, int_sizes]
+libminc.miget_dimension_sizes.argtypes = [dimensions, misize_t, uint_sizes]
 libminc.miget_dimension_name.argtypes = [c_void_p, POINTER(c_char_p)]
 libminc.miget_dimension_separations.argtypes = [dimensions, c_int, misize_t, 
 											    double_sizes]
