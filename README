@@ -14,6 +14,11 @@ Requirements:
 Pyminc requires numpy (the python numerical arrays package) to work. Also, it needs 
 MINC2 compiled as a shared object and accessible through the standard search paths
 
+Currently pyminc is geared towards the develop branch of libminc, because that is the 
+version of MINC that is installed through the minc-toolkit (https://github.com/BIC-MNI/minc-toolkit).
+There are some substantial differences between that branch and the master branch of 
+libminc in terms of the argument types of several functions.
+
 *****
 
 Installing pyminc:
