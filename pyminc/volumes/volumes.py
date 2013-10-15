@@ -19,7 +19,7 @@ class mincVolume(object):
         self.dims = dimensions()     # holds the actual pointers to dimensions
         self.ndims = 0               # number of dimensions in this volume
         self.ndims_misize_t = 0      # same number, but in different format
-        self.sizes = int_sizes()     # holds dimension sizes info
+        self.sizes = uint_sizes()    # holds dimension sizes info
         self.dataLoadable = False    # we know enough about the file on disk to load data
         self.dataLoaded = False      # data sits inside the .data attribute
         self.dtype = dtype           # default datatype for array representation
@@ -396,6 +396,7 @@ class mincVolume(object):
                 testMincReturn(r)
         self.dims = apply(dimensions, tmpdims[0:self.ndims])
         self.separations = steps
+        for i in range(self.ndims): self.sizes[i] = sizes[i]
 
     def closeVolume(self):
         """close volume and release all pointer memory"""

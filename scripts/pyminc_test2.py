@@ -25,7 +25,7 @@ def minc_test(input, method, output):
    
    # get volume dimensions and their sizes
    d = dimensions(0,0,0)
-   s = int_sizes(0,0,0)
+   s = uint_sizes(0,0,0)
    libminc.miget_volume_dimensions(test, MI_DIMCLASS_SPATIAL, MI_DIMATTR_ALL,
 				MI_DIMORDER_FILE, 3, d)
    libminc.miget_dimension_sizes(d, 3, s)
