@@ -319,7 +319,7 @@ class mincVolume(object):
             r = libminc.miget_dimension_name(self.dims[i], name)
             self.dimnames.append(name.value)
         if self.debug:
-            print "dimnames:", self.dimname
+            print "dimnames:", self.dimnames
         self.history = self.getHistory(size=999999)
         
         
