@@ -320,9 +320,15 @@ class mincVolume(object):
             self.dimnames.append(name.value)
         if self.debug:
             print "dimnames:", self.dimnames
-        self.history = self.getHistory(size=999999)
-        
-        
+        try:
+            self.history = self.getHistory(size=999999)        
+        except mincException:
+            # some programs do not properly initialize the minc history attribute
+            # (for example RMINC (july 2014)). Running getHistory() on one of those files will
+            # generate a mincException. However, we can ignore that and simply
+            # leave the current history of the input file initialized at ""
+            if self.debug:
+                print "MINC file does not have a history attribute, creating one"
         self.dataLoadable = True
     def copyDimensions(self, otherInstance, dims=None):
         """create new local dimensions info copied from another instance"""
