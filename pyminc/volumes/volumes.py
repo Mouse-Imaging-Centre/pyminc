@@ -209,10 +209,16 @@ class mincVolume(object):
                 min = data.min()
             else:
                 min = currentMin.value
-        # Note: for float volumes it would be better to set the volume 
-        # and voxel range to be the same -- JGS
-        vmax = mincSizes[self.volumeType]["max"]
-        vmin = mincSizes[self.volumeType]["min"]
+        if(self.volumeType == "float" or self.volumeType == "double"):
+            # there is no defined minimum or maximum to the float/double range
+            # in this case, the volume and voxel range should be the same
+            vmax = max
+            vmin = min
+        else:
+            # for all other data types, set min and max to those associated
+            # with the data type
+            vmax = mincSizes[self.volumeType]["max"]
+            vmin = mincSizes[self.volumeType]["min"]
         # if this is a label volume then make vmax and vmin be the same as max and min
         # note - in the future this should use the minc2 label types, but since no tool supports them yet ...
         if self.labels:

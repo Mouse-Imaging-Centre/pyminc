@@ -1,0 +1,4 @@
+New in Version 0.4
+==================
+* fixed bug, such that float and double MINC files can be written to disk
+
