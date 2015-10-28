@@ -7,9 +7,9 @@ from optparse import OptionParser
 def convert_sva(filename, output_filename, step=0.2):
     infile = open(filename, 'r')
     comment = infile.readline()
-    print "FILE: %s" % comment
+    print("FILE: %s" % comment)
     dims = infile.readline().strip().split(":")[1].split(",")
-    print "DIMS: %s" % dims
+    print("DIMS: %s" % dims)
     
     vol = volumeFromDescription(output_filename, 
                                 ["yspace","zspace","xspace"],
@@ -21,7 +21,7 @@ def convert_sva(filename, output_filename, step=0.2):
         line = infile.readline()
         if not line: break
         vals = line.strip().split(",")
-        #print vals
+        #print(vals)
         vol.data[int(vals[0]), int(vals[1]), int(vals[2])] = float(vals[3])
 
     vol.writeFile()

@@ -1,9 +1,10 @@
-from libpyminc2 import *
-from hyperslab import HyperSlab
+from .libpyminc2 import *
+from .hyperslab import HyperSlab
 import operator
 import os
 import sys
 import datetime as datetime
+from functools import reduce
 
 class mincException(Exception): pass
 class NoDataException(Exception): pass
@@ -29,14 +30,14 @@ class mincVolume(object):
         self.history = create_string_buffer("") # string holding the history information of the file (type = ctypes array of c_char)
         self.historyupdated = False  # does the history contain information about what pyminc has done?
         self.order = "C"
-        self.debug = os.environ.has_key("PYMINCDEBUG")
+        self.debug = "PYMINCDEBUG" in os.environ
 
     def getDtype(self, data):
         """get the mincSizes datatype based on a numpy array"""
         dtype = None
         for type in mincSizes:
             if self.debug:
-                print "TYPE:", type, data.dtype, mincSizes[type]["numpy"] 
+                print("TYPE:", type, data.dtype, mincSizes[type]["numpy"] )
             if mincSizes[type]["numpy"] == data.dtype:
                 dtype = type
                 break
@@ -44,7 +45,7 @@ class mincVolume(object):
 
     def getdata(self):
         """called when data attribute requested"""
-        #print "getting data"
+        #print("getting data")
         if self.ndims > 0:
             if not self.dataLoaded:
                 self.loadData()
@@ -56,10 +57,10 @@ class mincVolume(object):
     def setdata(self, newdata):
         """sets the data attribute"""
         if self.debug:
-            print "setting data"
+            print("setting data")
         if newdata.shape != tuple(self.sizes[0:self.ndims]):
             if self.debug:
-                print "Shapes", newdata.shape, self.sizes[0:self.ndims]
+                print("Shapes", newdata.shape, self.sizes[0:self.ndims])
             raise IncorrectDimsException
         #elif self.dataLoadable == False:
         #    raise NoDataException
@@ -67,12 +68,12 @@ class mincVolume(object):
             self._data = newdata
             self.dataLoaded = True
             if self.debug:
-                print "New Shape:", self.data.shape
+                print("New Shape:", self.data.shape)
 
     def loadData(self):
         """loads the data from file into the data attribute"""
         if self.debug:
-            print "size", self.sizes[:]
+            print("size", self.sizes[:])
         if self.dataLoadable:
             self._data = self.getHyperslab(int_sizes(), self.sizes[0:self.ndims], 
                                            self.dtype)
@@ -95,22 +96,22 @@ class mincVolume(object):
         count = array(count[:self.ndims])
         size = reduce(operator.mul, count)
         if self.debug:
-            print start[:], count[:], size
+            print(start[:], count[:], size)
         a = HyperSlab(zeros(count, dtype=mincSizes[dtype]["numpy"], order=self.order), 
                       start=start, count=count, separations=self.separations) 
 
         if self.dataLoaded:
-            slices = map(lambda x, y: slice(x, x+y), start, count)
+            slices = list(map(lambda x, y: slice(x, x+y), start, count))
             if dtype == "float" or dtype == "double":
                 a[...] = self.data[slices]
             else:
-                raise RuntimeError, "get hyperslab for integer datatypes not yet implemented"+\
-                    " when volume is already loaded into memory"
+                raise RuntimeError("get hyperslab for integer datatypes not yet implemented"
+                                   " when volume is already loaded into memory")
         else:  # if data not already loaded
             ctype_start = misize_t_sizes(*start)
             ctype_count = misize_t_sizes(*count)
             if self.debug:
-                print start[:], count[:], size
+                print(start[:], count[:], size)
             r = 0
             if dtype == "float" or dtype == "double":
                 # return real values if datatpye is floating point
@@ -135,7 +136,7 @@ class mincVolume(object):
         """write hyperslab back to file"""
 
         if self.readonly:
-            raise IOError, "Writing to file %s which has been opened in readonly mode" % self.filename
+            raise IOError("Writing to file %s which has been opened in readonly mode" % self.filename)
         if not self.dataLoadable:
             self.createVolumeImage() 
         if not count:
@@ -144,7 +145,7 @@ class mincVolume(object):
             start = data.start
             
         if self.dataLoaded:
-            slices = map(lambda x, y: slice(x, x+y), start, count)
+            slices = list(map(lambda x, y: slice(x, x+y), start, count))
             self.data[slices] = data
         else: # if data is not in memory write hyperslab to disk
             ctype_start = misize_t_sizes(*start[:self.ndims])
@@ -153,7 +154,7 @@ class mincVolume(object):
             dtype = self.getDtype(data)
             self.setVolumeRanges(data)
             if self.debug:
-                print "before setting of hyperslab"
+                print("before setting of hyperslab")
             if dtype == "float" or dtype == "double":
                 r = libminc.miset_real_value_hyperslab(
                         self.volPointer, mincSizes[dtype]["minc"],
@@ -161,14 +162,14 @@ class mincVolume(object):
                         data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
                 testMincReturn(r)
             else:
-                raise "setting hyperslab with types other than float or double not yet supported"
+                raise NotImplementedError("setting hyperslab with types other than float or double not yet supported")
             if self.debug:
-                print "after setting of hyperslab"
+                print("after setting of hyperslab")
 
     def writeFile(self):
         """write the current data array to file"""
         if self.readonly:
-            raise IOError, "Writing to file %s which has been opened in readonly mode" % self.filename
+            raise IOError("Writing to file %s which has been opened in readonly mode" % self.filename)
         if not self.historyupdated:
             addToHist = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " >>> (default history added after pyminc usage) " + " ".join(sys.argv)
             self.appendAndWriteHistory(history=addToHist)
@@ -223,7 +224,7 @@ class mincVolume(object):
         # note - in the future this should use the minc2 label types, but since no tool supports them yet ...
         if self.labels:
             if max > vmax or min < vmin:
-                raise "label volume found where max or min label exceeds max or min of volume type"
+                raise ValueError("label volume found where max or min label exceeds max or min of volume type")
             vmax = max
             vmin = min
         r = libminc.miset_volume_range(self.volPointer, max, min)
@@ -304,28 +305,28 @@ class mincVolume(object):
         r = libminc.miget_dimension_sizes(self.dims, self.ndims_misize_t, self.sizes)
         testMincReturn(r)
         if self.debug:
-            print "sizes", self.sizes[0:self.ndims]
+            print("sizes", self.sizes[0:self.ndims])
         seps = double_sizes()
         r = libminc.miget_dimension_separations(self.dims, MI_DIMORDER_APPARENT,
                                                 self.ndims_misize_t, seps)
         testMincReturn(r)
         self.separations = seps[0:self.ndims]
         if self.debug:
-            print "separations", self.separations
+            print("separations", self.separations)
         starts = double_sizes()
         r = libminc.miget_dimension_starts(self.dims, MI_DIMORDER_APPARENT,
                                            self.ndims_misize_t, starts)
         testMincReturn(r)
         self.starts = starts[0:self.ndims]
         if self.debug:
-            print "starts", self.starts
+            print("starts", self.starts)
         self.dimnames = []
         for i in range(self.ndims):
             name = c_char_p("")
             r = libminc.miget_dimension_name(self.dims[i], name)
             self.dimnames.append(name.value)
         if self.debug:
-            print "dimnames:", self.dimnames
+            print("dimnames:", self.dimnames)
         try:
             self.history = self.getHistory(size=999999)        
         except mincException:
@@ -334,17 +335,17 @@ class mincVolume(object):
             # generate a mincException. However, we can ignore that and simply
             # leave the current history of the input file initialized at ""
             if self.debug:
-                print "MINC file does not have a history attribute, creating one"
+                print("MINC file does not have a history attribute, creating one")
         self.dataLoadable = True
     def copyDimensions(self, otherInstance, dims=None):
         """create new local dimensions info copied from another instance"""
         if not dims:
             dims = otherInstance.dimnames
         self.ndims = c_int(len(dims))
-        self.starts = range(self.ndims.value)
-        self.separations = range(self.ndims.value)
-        self.dimnames = range(self.ndims.value)
-        tmpdims = range(self.ndims.value)
+        self.starts = list(range(self.ndims.value))
+        self.separations = list(range(self.ndims.value))
+        self.dimnames = list(range(self.ndims.value))
+        tmpdims = list(range(self.ndims.value))
         j=0
         for i in range(otherInstance.ndims):
             if otherInstance.dimnames[i] in dims:
@@ -354,10 +355,10 @@ class mincVolume(object):
                 self.dimnames[j] = otherInstance.dimnames[i]
                 r = libminc.micopy_dimension(otherInstance.dims[i], tmpdims[j])
                 if self.debug:
-                    print r, otherInstance.dims[i], tmpdims[j], self.dimnames[j]
+                    print(r, otherInstance.dims[i], tmpdims[j], self.dimnames[j])
                 testMincReturn(r)
                 j = j+1
-        self.dims = apply(dimensions, tmpdims[0:self.ndims.value])
+        self.dims = dimensions(*tmpdims[0:self.ndims.value])
         self.ndims = self.ndims.value
         
     def copyDtype(self, otherInstance):
@@ -373,14 +374,14 @@ class mincVolume(object):
         self.volPointer = mihandle()
         self.volumeType = volumeType
         if self.debug:
-            print self.ndims, self.dims[0:self.ndims]
+            print(self.ndims, self.dims[0:self.ndims])
         r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 
                                     mincSizes[volumeType]["minc"], MI_CLASS_REAL,
                                     None, self.volPointer)
         testMincReturn(r)
         r = libminc.miget_dimension_sizes(self.dims, self.ndims, self.sizes)
         if self.debug:
-            print "sizes", self.sizes[0:self.ndims]
+            print("sizes", self.sizes[0:self.ndims])
         testMincReturn(r)
         
     def createVolumeImage(self):
@@ -392,7 +393,7 @@ class mincVolume(object):
     def createNewDimensions(self, dimnames, sizes, starts, steps):
         """creates new dimensions for a new volume"""
         self.ndims = len(dimnames)
-        tmpdims = range(self.ndims)
+        tmpdims = list(range(self.ndims))
         for i in range(self.ndims):
             tmpdims[i] = c_void_p(0)
             type = MI_DIMCLASS_SPATIAL
@@ -406,7 +407,7 @@ class mincVolume(object):
                 testMincReturn(r)
                 r = libminc.miset_dimension_start(tmpdims[i], starts[i])
                 testMincReturn(r)
-        self.dims = apply(dimensions, tmpdims[0:self.ndims])
+        self.dims = dimensions(*tmpdims[0:self.ndims])
         self.separations = steps
 
     def closeVolume(self):
@@ -436,7 +437,7 @@ class mincVolume(object):
     #adding history to minc files, history should be a string
     def appendAndWriteHistory(self, history=None):
         if self.debug:
-            print "adding to history :", history
+            print("adding to history :", history)
         fullHistory = self.history.value + history
         self.history = create_string_buffer(fullHistory)
         r = libminc.miadd_history_attr(self.volPointer, len(self.history), self.history)
@@ -467,7 +468,7 @@ class mincVolume(object):
         testMincReturn(r)
     #copy attributes from path 
     def copyAttributes(self, otherInstance, path=None):
-       	r = libminc.micopy_attr(otherInstance.volPointer, path, self.volPointer)
+        r = libminc.micopy_attr(otherInstance.volPointer, path, self.volPointer)
         testMincReturn(r)
 
     def convertVoxelToWorld(self, voxel):

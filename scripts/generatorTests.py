@@ -107,7 +107,7 @@ class TestReadWrite(unittest.TestCase):
         """ensure that data can be read and written correctly"""
         v = volumeFromFile(inputFilename)
         o = volumeFromInstance(v, outputFilename, data=True)
-        print o.data
+        print(o.data)
         o.data = v.data * 5
         oa = N.average(o.data)
         v.closeVolume()

@@ -1,6 +1,6 @@
 """factories for creating mincVolumes"""
 
-from volumes import mincException,mincVolume
+from .volumes import mincException,mincVolume
 
 def volumeFromFile(filename, dtype="float", readonly=True, labels=False):
     """creates a new mincVolume from existing file."""

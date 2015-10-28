@@ -4,15 +4,15 @@ class HyperSlab(N.ndarray):
     """an ndarray with location and voxel-to-world mapping information"""
     def __new__(subtype, data, start=None, separations=None, 
                 count=None, dimnames=None, dtype=None):
-        #print "DATA", data
+        #print("DATA", data)
         subarr = 0
         if isinstance(data, N.ndarray):
             subarr = data.view(HyperSlab)
         else:
-            raise "Can't handle non-ndarrays for the moment"
+            raise TypeError("Can't handle non-ndarrays for the moment")
         # transform subarr into a hyperslab using view method
         #subarr = subarr.view(subtype)
-        #print "SUBARR", subarr
+        #print("SUBARR", subarr)
         if start is not None:
             subarr.start = start
         elif hasattr(data, 'start'):
