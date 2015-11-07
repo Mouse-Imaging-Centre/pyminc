@@ -1,6 +1,6 @@
 import unittest
-from volumes import *
-from factory import *
+from pyminc.volumes.volumes import *
+from pyminc.volumes.factory import *
 import numpy as N
 import os
 
@@ -193,7 +193,7 @@ class testVectorFiles(unittest.TestCase):
     def testReduceDimensions(self):
         """ensure that vector file can be turned into spatial volume"""
         v = volumeFromFile(inputVector)
-        v2 = volumeFromInstance(v, outputFilename, dims=["xspace","yspace","zspace"])
+        v2 = volumeFromInstance(v, outputFilename, dims=["xspace", "yspace", "zspace"])
         ndims = v2.ndims
         v.closeVolume()
         v2.closeVolume()

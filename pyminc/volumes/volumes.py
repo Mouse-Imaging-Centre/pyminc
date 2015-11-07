@@ -27,7 +27,7 @@ class mincVolume(object):
         self.filename = filename     # the filename associated with this volume
         self.readonly = readonly     # flag indicating that volume is for reading only
         self.labels = labels         # whether it contains labels - affects how ranges are set
-        self.history = create_string_buffer("") # string holding the history information of the file (type = ctypes array of c_char)
+        self.history = create_unicode_buffer("") # string holding the history information of the file (type = ctypes array of c_char)
         self.historyupdated = False  # does the history contain information about what pyminc has done?
         self.order = "C"
         self.debug = "PYMINCDEBUG" in os.environ
@@ -322,9 +322,9 @@ class mincVolume(object):
             print("starts", self.starts)
         self.dimnames = []
         for i in range(self.ndims):
-            name = c_char_p("")
+            name = c_unicode_p("")
             r = libminc.miget_dimension_name(self.dims[i], name)
-            self.dimnames.append(name.value)
+            self.dimnames.append(name.value.decode(encoding))  # FIXME
         if self.debug:
             print("dimnames:", self.dimnames)
         try:
@@ -375,6 +375,7 @@ class mincVolume(object):
         self.volumeType = volumeType
         if self.debug:
             print(self.ndims, self.dims[0:self.ndims])
+        #import pdb; pdb.set_trace()
         r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 
                                     mincSizes[volumeType]["minc"], MI_CLASS_REAL,
                                     None, self.volPointer)
@@ -435,18 +436,18 @@ class mincVolume(object):
     data = property(getdata,setdata,None,None)
     
     #adding history to minc files, history should be a string
-    def appendAndWriteHistory(self, history=None):
+    def appendAndWriteHistory(self, history):
         if self.debug:
             print("adding to history :", history)
         fullHistory = self.history.value + history
-        self.history = create_string_buffer(fullHistory)
+        self.history = create_unicode_buffer(fullHistory)
         r = libminc.miadd_history_attr(self.volPointer, len(self.history), self.history)
         testMincReturn(r)
         self.historyupdated = True
 
     #retrieve history of file 
     def getHistory(self, size, history=None):
-        history = create_string_buffer(size) 
+        history = create_unicode_buffer(size) 
         r = libminc.miget_attr_values(self.volPointer, MI_TYPE_STRING, "", "history", len(history), history)
         testMincReturn(r)
         # add a new line to the history to ensure that this command is seen as a new
@@ -457,7 +458,7 @@ class mincVolume(object):
 
     # set apparent dimension orders
     def setApparentDimensionOrder(self, size=None, name=[]):
-        array_type = c_char_p * size
+        array_type = c_unicode_p * size
         names = array_type()
         for i in range(size):
             if (len(name.split(',')[i]) == 1):

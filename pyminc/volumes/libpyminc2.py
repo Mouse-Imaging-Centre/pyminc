@@ -1,7 +1,9 @@
-#/usr/bin/env python
+#!/usr/bin/env python
 
 from ctypes import *
 from ctypes.util import find_library
+import _ctypes
+import locale
 from numpy import *
 import sys
 
@@ -17,7 +19,6 @@ except OSError:
     except OSError:
         sys.stderr.write("ERROR: Neither libminc2.so nor libminc2.dylib found on search path\n.")
         sys.exit(3)
-
 
 # sizes used by MINC and numpy
 # mincSizes contains all acceptable MINC datatype sizes. Each item has
@@ -90,14 +91,25 @@ world_coord = c_double * 3
 mibool = c_int
 misize_t = c_ulonglong
 
+# guess at the encoding (mostly so filenames behave sensibly);
+encoding = locale.getpreferredencoding()
+
+# 'type' to allow Python3 strings to be used as arguments to libminc C functions:
+class c_unicode_p(c_char_p):
+    def __init__(self, arg):
+        super(self.__class__, self).__init__(arg.encode(encoding))
+        # to allow bytestrings as well, could use `hasattr(retval, "decode")`
+    def from_param(arg):
+        return c_char_p.from_param(arg.encode(encoding))
+
 # argument declarations - not really necessary but does make
 # segfaults a bit easier to avoid.
-libminc.miopen_volume.argtypes = [c_char_p, c_int, POINTER(mihandle)]
+libminc.miopen_volume.argtypes = [c_unicode_p, c_int, POINTER(mihandle)]
 libminc.miget_real_value.argtypes = [mihandle, location, c_int, POINTER(voxel)]
 libminc.miget_volume_dimensions.argtypes = [mihandle, c_int, c_int, c_int,
                                             c_int, dimensions]
 libminc.miget_dimension_sizes.argtypes = [dimensions, misize_t, int_sizes]
-libminc.miget_dimension_name.argtypes = [c_void_p, POINTER(c_char_p)]
+libminc.miget_dimension_name.argtypes = [c_void_p, POINTER(c_unicode_p)]
 libminc.miget_dimension_separations.argtypes = [dimensions, c_int, misize_t, 
                                                 double_sizes]
 libminc.miget_dimension_starts.argtypes = [dimensions, c_int, misize_t,
@@ -106,7 +118,7 @@ libminc.miget_dimension_starts.argtypes = [dimensions, c_int, misize_t,
 #libminc.miget_real_value_hyperslab.argtypes = [mihandle, c_int, misize_t_sizes,
 #                                               misize_t_sizes, POINTER(c_double)]
 libminc.micopy_dimension.argtypes = [c_void_p, POINTER(c_void_p)]
-libminc.micreate_volume.argtypes = [c_char_p, c_int, dimensions, c_int, c_int,
+libminc.micreate_volume.argtypes = [c_unicode_p, c_int, dimensions, c_int, c_int,
                                     c_void_p, POINTER(mihandle)]
 libminc.micreate_volume_image.argtypes = [mihandle]
 libminc.miset_volume_valid_range.argtypes = [mihandle, c_double, c_double]
@@ -121,18 +133,18 @@ libminc.miclose_volume.argtypes = [mihandle]
 libminc.miget_volume_dimension_count.argtypes = [mihandle, c_int, c_int,
                                                  POINTER(c_int)]
 libminc.mifree_dimension_handle.argtypes = [c_void_p]
-libminc.micreate_dimension.argtypes = [c_char_p, c_int, c_int, misize_t, POINTER(c_void_p)]
+libminc.micreate_dimension.argtypes = [c_unicode_p, c_int, c_int, misize_t, POINTER(c_void_p)]
 libminc.miset_dimension_separation.argtypes = [c_void_p, c_double]
 libminc.miset_dimension_start.argtypes = [c_void_p, c_double]
 
 #adding history to minc files
 libminc.miadd_history_attr.argtypes = [mihandle, c_uint, c_void_p]
 # retrieve history of file to append to history of new file
-libminc.miget_attr_values.argtypes = [mihandle, c_int, c_char_p, c_char_p, c_uint, c_void_p] 
+libminc.miget_attr_values.argtypes = [mihandle, c_int, c_unicode_p, c_unicode_p, c_uint, c_void_p] 
 #apparent dimension order
-libminc.miset_apparent_dimension_order_by_name.argtypes = [mihandle, c_int, POINTER(c_char_p)]
+libminc.miset_apparent_dimension_order_by_name.argtypes = [mihandle, c_int, POINTER(c_unicode_p)]
 #copying attributes in path from one file to another
-libminc.micopy_attr.argtypes = [mihandle, c_char_p, mihandle]
+libminc.micopy_attr.argtypes = [mihandle, c_unicode_p, mihandle]
 
 #voxel to world coordinate conversions
 libminc.miconvert_voxel_to_world.argtypes = [mihandle, voxel_coord, world_coord]

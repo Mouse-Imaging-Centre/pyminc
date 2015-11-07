@@ -4,7 +4,6 @@ from __future__ import print_function
 # import minc definitions
 from pyminc.volumes.libpyminc2 import *
 from pyminc.volumes.volumes import *
-import scipy
 from sys import argv
 import time
 from optparse import OptionParser
@@ -23,7 +22,7 @@ def minc_test(input, method, output):
    # create a new mihandle and open a volume
    starttime = time.clock()
    test = mihandle()
-   libminc.miopen_volume(input.encode('ascii'), 1, test)
+   libminc.miopen_volume(input, 1, test)
    print("Opening volume took %.5f seconds" % (time.clock() - starttime))
    
    # define a location, a voxel, and get that location from the mihandle
@@ -102,6 +101,8 @@ for (int x=1; x<nx-1; ++x) {
           weave.inline(code, ['narr', 'nx', 'ny', 'nz'], 
                        type_converters=converters.blitz,
                        compiler="gcc")
+       else:
+          raise ValueError("unknown method: %s" % method)
 
        times[i] = time.clock() - starttime
        print("Iterations %d took %.3f seconds" % (i,times[i]))
@@ -118,7 +119,7 @@ for (int x=1; x<nx-1; ++x) {
    new_volume = mihandle()
    print("before volume")
    starttime = time.clock()
-   libminc.micreate_volume(output.encode('ascii'), 3, d_new, MI_TYPE_UBYTE, MI_CLASS_REAL, 
+   libminc.micreate_volume(output, 3, d_new, MI_TYPE_UBYTE, MI_CLASS_REAL, 
                            None, new_volume)
    libminc.micreate_volume_image(new_volume)
    print("after volume")

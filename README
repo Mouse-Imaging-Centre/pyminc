@@ -12,7 +12,7 @@ http://en.wikibooks.org/wiki/MINC/Tutorials
 Requirements:
 
 Pyminc requires numpy (the python numerical arrays package) to work. Also, it needs 
-MINC2 compiled as a shared object and accessible through the standard search paths
+MINC2 compiled as a shared object and accessible through the standard search paths.
 
 Currently pyminc is geared towards the develop branch of libminc, because that is the 
 version of MINC that is installed through the minc-toolkit (https://github.com/BIC-MNI/minc-toolkit).
@@ -25,7 +25,7 @@ Installing pyminc:
 
 1) Untar the tarball if applicable
 
-2) Run 'python setup.py install' with an optinal --prefix if you want to install it in a non-default location
+2) Run 'python setup.py install' with an optional --prefix if you want to install it in a non-default location
 
 3) Test the installation. To test the installation of pyminc library, run the pyminc_test2.py script in the
 scripts folder. This program has 3 arguments: a minc file, a method for smoothing the volume (numpy, blitz or weave)
