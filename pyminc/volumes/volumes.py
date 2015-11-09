@@ -375,7 +375,6 @@ class mincVolume(object):
         self.volumeType = volumeType
         if self.debug:
             print(self.ndims, self.dims[0:self.ndims])
-        #import pdb; pdb.set_trace()
         r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 
                                     mincSizes[volumeType]["minc"], MI_CLASS_REAL,
                                     None, self.volPointer)
