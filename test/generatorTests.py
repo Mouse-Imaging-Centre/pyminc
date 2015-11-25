@@ -79,6 +79,7 @@ class TestCopyConstructor(unittest.TestCase):
         v.closeVolume()
         n.closeVolume()
         self.assertNotEqual(va, na)
+    @unittest.expectedFailure
     def testEmptyFile(self):
         """ensure that empty volume is not written to disk"""
         v = volumeFromFile(inputFilename)
