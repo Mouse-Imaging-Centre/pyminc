@@ -27,7 +27,7 @@ class mincVolume(object):
         self.filename = filename     # the filename associated with this volume
         self.readonly = readonly     # flag indicating that volume is for reading only
         self.labels = labels         # whether it contains labels - affects how ranges are set
-        self.history = create_unicode_buffer("") # string holding the history information of the file (type = ctypes array of c_char)
+        self.history = create_string_buffer(b"") # string holding the history information of the file (type = ctypes array of c_char)
         self.historyupdated = False  # does the history contain information about what pyminc has done?
         self.order = "C"
         self.debug = "PYMINCDEBUG" in os.environ
@@ -322,9 +322,9 @@ class mincVolume(object):
             print("starts", self.starts)
         self.dimnames = []
         for i in range(self.ndims):
-            name = c_unicode_p("")
+            name = c_stringy("")
             r = libminc.miget_dimension_name(self.dims[i], name)
-            self.dimnames.append(name.value.decode(encoding))  # FIXME
+            self.dimnames.append(name.value.decode(encoding))  # FIXME # TODO: mifree_name(name)
         if self.debug:
             print("dimnames:", self.dimnames)
         try:
@@ -438,21 +438,21 @@ class mincVolume(object):
     def appendAndWriteHistory(self, history):
         if self.debug:
             print("adding to history :", history)
-        fullHistory = self.history.value + history
-        self.history = create_unicode_buffer(fullHistory)
+        fullHistory = self.history.value + history.encode(encoding)
+        self.history = create_string_buffer(fullHistory)
         r = libminc.miadd_history_attr(self.volPointer, len(self.history), self.history)
         testMincReturn(r)
         self.historyupdated = True
 
     #retrieve history of file 
     def getHistory(self, size, history=None):
-        history = create_unicode_buffer(size) 
+        history = create_string_buffer(size) 
         r = libminc.miget_attr_values(self.volPointer, MI_TYPE_STRING, "", "history", len(history), history)
         testMincReturn(r)
         # add a new line to the history to ensure that this command is seen as a new
         # command in the MINC history (i.e., is not simply concatenated into a big
         # long string)
-        history.value = history.value + "\n"
+        history.value = history.value + b"\n"
         return history
 
     # set apparent dimension orders
