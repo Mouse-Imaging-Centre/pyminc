@@ -1,5 +1,5 @@
 Pyminc is a python interface to the MINC 2 library, allowing use of numpy arrays to 
-access MINC data, and other such similar goodies developed by Jason Lerch.
+access MINC data, and other such similar goodies, developed by Jason Lerch.
 
 *****
 
@@ -29,5 +29,5 @@ Installing pyminc:
 
 3) Test the installation. To test the installation of pyminc library, run the pyminc_test2.py script in the
 scripts folder. This program has 3 arguments: a minc file, a method for smoothing the volume (numpy, blitz or weave)
-and an output file name
+and an output file name.
 
