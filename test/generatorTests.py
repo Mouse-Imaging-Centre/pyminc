@@ -3,16 +3,23 @@ from pyminc.volumes.volumes import *
 from pyminc.volumes.factory import *
 import numpy as N
 import os
+import subprocess
+import tempfile
 
+outputFilename = tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc").name
+emptyFilename = tempfile.NamedTemporaryFile(prefix="test-empty-", suffix=".mnc").name
+newFilename = tempfile.NamedTemporaryFile(prefix="test-new-volume-", suffix=".mnc").name
 
-#inputFilename = "/Users/jason/workspace/pyminc-eclipse/test.mnc"
-#outputFilename = "/Users/jason/workspace/pyminc-eclipse/test-out.mnc"
+inputFilename = tempfile.NamedTemporaryFile(prefix="test-", suffix=".mnc").name
+subprocess.check_call(['rawtominc', inputFilename, '-input', '/dev/urandom', '100', '150', '125'])
 
-inputFilename = "/tmp/test.mnc"
-outputFilename = "/tmp/test-out.mnc"
-emptyFile = "/tmp/test-empty.mnc"
-inputVector = "/tmp/test-vector.mnc"
-newFile = "/tmp/new-volume.mnc"
+inputVector = tempfile.NamedTemporaryFile(prefix="test-vector-", suffix=".mnc").name
+subprocess.check_call(['rawtominc', inputVector, '-input', '/dev/urandom', '3', '100', '150', '125',
+                       '-dimorder', 'vector_dimension,xspace,yspace,zspace'])
+
+def tearDownModule():
+    os.remove(inputFilename)
+    os.remove(inputVector)
 
 class TestFromFile(unittest.TestCase):
     """test the volumeFromFile generator"""
@@ -122,13 +129,13 @@ class TestFromDescription(unittest.TestCase):
     """testing creation of brand new volumes"""
     def testCreateVolume(self):
         """test whether new volume can be created"""
-        v = volumeFromDescription(newFile, ("xspace", "yspace", "zspace"), (10,20,30),
+        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), (10,20,30),
                                   (-10,10,20), (0.5,0.5,0.5))
         v.data[:,:,:] = 3
         v.data[5,:,:] = 10
         v.writeFile()
         v.closeVolume()
-        o = volumeFromFile(newFile)
+        o = volumeFromFile(newFilename)
         self.assertAlmostEqual(v.data.max(), 10, 3)
 
 

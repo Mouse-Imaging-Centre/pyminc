@@ -44,3 +44,14 @@ def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volume
     v.createVolumeHandle(volumeType)
     v.createVolumeImage()
     return(v)
+
+def volumeFromData(outputFilename, data, dimnames=("xspace", "yspace", "zspace"),
+                   starts=(0,0,0), steps=(1,1,1),
+                   volumeType="ubyte", labels=False):
+    """creates a mincVolume from a given array"""
+    v = volumeFromDescription(outputFilename=outputFilename, sizes=data.shape,
+                              dimnames=dimnames, starts=starts, steps=steps,
+                              volumeType=volumeType, labels=labels)
+    v.dtype = v.getDtype(data)
+    v.data = data
+    return v
