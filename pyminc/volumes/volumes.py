@@ -415,6 +415,10 @@ class mincVolume(object):
         if self.volPointer is not None:  # avoid freeing memory twice
             # in the current version of miclose_volume, the dimension
             # handles are all freed as well
+            # Also, since `closeVolume` is invoked by `__del__`,
+            # the following line may cause a warning at program exit
+            # due to Python's strange finalization behaviour.  We could
+            # test for `libminc` being None ...
             r = libminc.miclose_volume(self.volPointer)
             testMincReturn(r)
             self.volPointer = None  
