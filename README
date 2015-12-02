@@ -11,9 +11,10 @@ http://en.wikibooks.org/wiki/MINC/Tutorials
 
 Requirements:
 
-Pyminc requires numpy (the python numerical arrays package) to work; this can be installed automatically
-from PyPI via setuptools. Also, it needs MINC2 compiled as a shared object and accessible through the
-standard search paths.  For the tests, you also need the `minc-tools` suite of command-line utilities.
+Pyminc is compatible with both Python 2 and Python 3.  It requires numpy (the python numerical arrays package) to work;
+this can be installed automatically from PyPI via setuptools. Also, it needs MINC2 compiled as a shared object
+and accessible through the standard search paths.  For the tests, you also need the `minc-tools` suite
+of command-line utilities.
 
 Currently pyminc is geared towards the develop branch of libminc, because that is the 
 version of MINC that is installed through the minc-toolkit (https://github.com/BIC-MNI/minc-toolkit).
