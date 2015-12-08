@@ -9,6 +9,6 @@ setup(name='pyminc',
       license = "BSD",
       packages = find_packages(),
       install_requires = ["numpy"],
-      scripts = ["scripts/sva2mnc.py", "pyminc_test2.py"],
+      scripts = ["scripts/sva2mnc.py", "scripts/pyminc_test2.py"],
       test_suite="test",
       )
