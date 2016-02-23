@@ -17,8 +17,8 @@ except OSError:
     try:
         libminc = cdll.LoadLibrary("libminc2.so")
     except OSError:
-        sys.stderr.write("ERROR: Neither libminc2.so nor libminc2.dylib found on search path\n.")
-        sys.exit(3)
+        sys.stderr.write("Something went wrong loading shared libraries ...")
+        raise
 
 # sizes used by MINC and numpy
 # mincSizes contains all acceptable MINC datatype sizes. Each item has
