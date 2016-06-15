@@ -239,12 +239,24 @@ class mincVolume(object):
         testMincReturn(status)
 
     def getVolumeRange(self):
-        """This method gets the range (min and max) scale value for the volume. Note that this method only works if volume is not slice scaled."""
-        volume_max, volume_min = c_double(), c_double()
-        status = libminc.miget_volume_range(self.volPointer, \
-                                    byref(volume_max), byref(volume_min))
-        testMincReturn(status)
-        return (volume_max.value, volume_min.value)
+        """
+        This method gets the range (min and max) scale value for the volume.
+        """
+        if self.isSliceScaled:
+            if self.debug:
+                print("Slice scaling is enabled, will determine the range based on the data loaded")
+            if self.dataLoaded:
+                return (float(self.data.min()), float(self.data.max()))
+            else:
+                self.loadData
+            return (float(self.data.min()), float(self.data.max()))
+        else:
+            volume_max, volume_min = c_double(), c_double()
+            status = libminc.miget_volume_range(self.volPointer,
+                                                byref(volume_max),
+                                                byref(volume_min))
+            testMincReturn(status)
+            return (volume_min.value, volume_max.value)
 
     def isSliceScaled(self):
         "return slice_scaling_flag for volume"
