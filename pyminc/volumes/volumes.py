@@ -184,14 +184,33 @@ class mincVolume(object):
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
                 self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
             testMincReturn(r)
-            # set the complete flag of the volume:
-            r = libminc.miset_attribute(self.volPointer,
-                                        MI_ROOT_PATH_FOR_IMAGE_ATTR, 
-                                        "complete",
-                                        MI_TYPE_STRING,
-                                        len("true_"),
-                                        "true_")
+            # set the complete flag of the volume the way it should be done:
+            r = libminc.miset_attr_values(self.volPointer, 
+                                          MI_TYPE_STRING, 
+                                          "image", 
+                                          "complete", 
+                                          5, 
+                                          "true_")
             testMincReturn(r)
+            # it's possible that people don't have the newest version
+            # of the MINC libraries installed (the above can only be run
+            # if you have the fix that was made on June 17, 2016:
+            # https://github.com/BIC-MNI/libminc/commit/3ca34259f7d5bdae11bf77226492457cb7a1922a )
+            # so let's see if that already worked:
+            minc_complete_out = float(os.popen("minccomplete %s" % self.filename).read())
+            if not (minc_complete_out == 0.0):
+                try:
+                    r = libminc.miset_attribute(self.volPointer,
+                                                MI_ROOT_PATH_FOR_IMAGE_ATTR, 
+                                                "complete",
+                                                MI_TYPE_STRING,
+                                                5,
+                                                "true_")
+                    testMincReturn(r)
+                except mincException:
+                    print("Warning/Info: could not set the image:complete flag for file: " + self.filename +
+                          " even though the file was written out successfully. Perhaps you need to update"
+                          " your libminc libraries.")
             # also close the volume, that way it can be used directly after
             # writeFile() is called
             self.closeVolume()
