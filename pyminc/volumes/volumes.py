@@ -9,13 +9,16 @@ from functools import reduce
 class mincException(Exception): pass
 class NoDataException(Exception): pass
 class IncorrectDimsException(Exception): pass
+class NoDataTypeException(Exception): pass
+class mincTypeNotDetermined(Exception): pass
+class volumeTypeNotDetermined(Exception): pass
 
 def testMincReturn(value):
     if value < 0:
         raise mincException
 
 class mincVolume(object):
-    def __init__(self, filename=None, dtype="float", readonly=True, labels=False):
+    def __init__(self, filename=None, dtype=None, readonly=True, labels=False):
         self.volPointer = mihandle() # holds the pointer to the mihandle
         self.dims = dimensions()     # holds the actual pointers to dimensions
         self.ndims = 0               # number of dimensions in this volume
@@ -23,7 +26,8 @@ class mincVolume(object):
         self.sizes = int_sizes()     # holds dimension sizes info
         self.dataLoadable = False    # we know enough about the file on disk to load data
         self.dataLoaded = False      # data sits inside the .data attribute
-        self.dtype = dtype           # default datatype for array representation
+        self.dtype = dtype           # data type for array representation (in Python)
+        self.volumeType = None       # data type on file, will be determined by openFile()
         self.filename = filename     # the filename associated with this volume
         self.readonly = readonly     # flag indicating that volume is for reading only
         self.labels = labels         # whether it contains labels - affects how ranges are set
@@ -62,10 +66,9 @@ class mincVolume(object):
             if self.debug:
                 print("Shapes", newdata.shape, self.sizes[0:self.ndims])
             raise IncorrectDimsException
-        #elif self.dataLoadable == False:
-        #    raise NoDataException
         else:
-            self._data = newdata
+            # make sure we don't change the data type of the data
+            self._data = newdata.astype(self.dtype)
             self.dataLoaded = True
             if self.debug:
                 print("New Shape:", self.data.shape)
@@ -86,23 +89,32 @@ class mincVolume(object):
         else: 
             raise NoDataException
 
-    def getHyperslab(self, start, count, dtype="float"):
-        """given starts and counts returns the corresponding array.  This is read either from memory or disk depending on the state of the dataLoaded variable."""
+    def getHyperslab(self, start, count, dtype=None):
+        """
+        given starts and counts returns the corresponding array.  This is read 
+        either from memory or disk depending on the state of the dataLoaded variable.
+        """
 
+        dtype_to_get = dtype or self.dtype
+        if not dtype_to_get:
+            sys.stderr.write("dtype unknown in getHyperslab...")
+            raise NoDataTypeException
         if self.dataLoadable == False:
             raise NoDataException
+        if self.debug:
+            print("We are loading the data from this file using dtype: ", dtype_to_get)
 
         start = array(start[:self.ndims])
         count = array(count[:self.ndims])
         size = reduce(operator.mul, count)
         if self.debug:
             print(start[:], count[:], size)
-        a = HyperSlab(zeros(count, dtype=mincSizes[dtype]["numpy"], order=self.order), 
+        a = HyperSlab(zeros(count, dtype=mincSizes[dtype_to_get]["numpy"], order=self.order), 
                       start=start, count=count, separations=self.separations) 
 
         if self.dataLoaded:
             slices = list(map(lambda x, y: slice(x, x+y), start, count))
-            if dtype == "float" or dtype == "double":
+            if dtype_to_get == "float" or dtype_to_get == "double":
                 a[...] = self.data[slices]
             else:
                 raise RuntimeError("get hyperslab for integer datatypes not yet implemented"
@@ -113,22 +125,22 @@ class mincVolume(object):
             if self.debug:
                 print(start[:], count[:], size)
             r = 0
-            if dtype == "float" or dtype == "double":
+            if dtype_to_get == "float" or dtype_to_get == "double":
                 # return real values if datatpye is floating point
                 r = libminc.miget_real_value_hyperslab(
                     self.volPointer, 
-                    mincSizes[dtype]["minc"],
+                    mincSizes[dtype_to_get]["minc"],
                     ctype_start, ctype_count, 
-                    a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+                    a.ctypes.data_as(POINTER(mincSizes[dtype_to_get]["ctype"])))
             else :
                 # return normalized values if datatype is integer
                 r = libminc.miget_hyperslab_normalized(
                     self.volPointer,
-                    mincSizes[dtype]["minc"],
+                    mincSizes[dtype_to_get]["minc"],
                     ctype_start, ctype_count,
-                    c_double(mincSizes[dtype]["min"]),
-                    c_double(mincSizes[dtype]["max"]),
-                    a.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+                    c_double(mincSizes[dtype_to_get]["min"]),
+                    c_double(mincSizes[dtype_to_get]["max"]),
+                    a.ctypes.data_as(POINTER(mincSizes[dtype_to_get]["ctype"])))
             testMincReturn(r)
         return a
 
@@ -177,7 +189,10 @@ class mincVolume(object):
             self.createVolumeImage() 
         if self.dataLoaded:  # only write if data is in memory
             # find the datatype map index
-            dtype = self.getDtype(self._data)
+            dtype = self.dtype
+            if not dtype:
+                sys.stderr.write("dtype unknown in writeFile...")
+                raise NoDataTypeException
             self.setVolumeRanges(self._data)
             r = libminc.miset_real_value_hyperslab(
                 self.volPointer, mincSizes[dtype]["minc"],
@@ -328,12 +343,45 @@ class mincVolume(object):
     def getDimensionNames(self):
         "return volume dimension names"
         return self.dimnames
+        
+    def getMincSizesFromMincType(self, minc_type):
+        """
+        minc_type -- c_int
+        
+        traverses mincSizes and determines the
+        human readable name for the data type (e.g. byte, ushort,...)
+        """
+        found_type = None
+        for mS_type in mincSizes:
+            if mincSizes[mS_type]["minc"] == minc_type.value:
+                found_type = mS_type
+                break
+        if not found_type:
+            sys.stderr.write("The data type of the MINC file is not supported by pyminc yet. "
+                             "Please submit an issue on GitHub: https://github.com/Mouse-Imaging-Centre/pyminc/issues "
+                             "Value of the MINC type that is not supported: ", str(minc_type.value))
+            raise mincTypeNotDetermined
+        return found_type
+    
 
     def openFile(self):
         """reads information from MINC file"""
         r = libminc.miopen_volume(self.filename, (MI2_OPEN_RDWR, MI2_OPEN_READ)[self.readonly],
                                   self.volPointer)
         testMincReturn(r)
+        # get information about the data type of the input file
+        file_datatype = mitype_t()
+        r = libminc.miget_data_type(self.volPointer, file_datatype)
+        testMincReturn(r)
+        self.volumeType = self.getMincSizesFromMincType(file_datatype)
+        if self.debug:
+            print("Datatype of the input file: ", self.volumeType)
+        # if the dtype was not explicitly set, set it to double in order
+        # not to lose any precision while working with the data
+        if not self.dtype:
+            self.dtype = "double"
+        if self.debug:
+            print("Datatype of the numpy array: ", self.dtype)
         ndims = c_int(0)
         libminc.miget_volume_dimension_count(self.volPointer,
                                              MI_DIMCLASS_ANY,
@@ -381,6 +429,7 @@ class mincVolume(object):
             if self.debug:
                 print("MINC file does not have a history attribute, creating one")
         self.dataLoadable = True
+        
     def copyDimensions(self, otherInstance, dims=None):
         """create new local dimensions info copied from another instance"""
         if not dims:
@@ -405,6 +454,14 @@ class mincVolume(object):
         self.dims = dimensions(*tmpdims[0:self.ndims.value])
         self.ndims = self.ndims.value
         
+    def setVolumeType(self, volumeType):
+        """set the volumeType"""
+        if not volumeType:
+            sys.stderr.write("volumeType passed along to setVolumeType is None. "
+                             "Should be set to a proper volumeType (e.g., short, float, ubyte...)")
+            raise volumeTypeNotDetermined
+        self.volumeType = volumeType
+        
     def copyDtype(self, otherInstance):
         """copy the datatype to use for this instance from another instance"""
         self.dtype = otherInstance.dtype
@@ -413,10 +470,15 @@ class mincVolume(object):
         """copy the history information to use for this instance from another instance"""
         self.history = otherInstance.history
         
-    def createVolumeHandle(self, volumeType="ubyte"):
+    def createVolumeHandle(self, volumeType=None):
         """creates a new volume on disk"""
         self.volPointer = mihandle()
-        self.volumeType = volumeType
+        if not volumeType and not self.volumeType:
+            sys.stderr.write("volumeType passed along to createVolumeHandle is None "
+                             "and the volumeType is not set in the object yet...")
+            raise volumeTypeNotDetermined
+        if volumeType:
+            self.volumeType = volumeType
         if self.debug:
             print(self.ndims, self.dims[0:self.ndims])
         r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 

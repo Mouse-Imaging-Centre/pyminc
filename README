@@ -28,7 +28,14 @@ Installing pyminc:
 Pyminc is installable from PyPI via setuptools, pip, etc.  To install from source:
 
 1) Untar the tarball if applicable
-2) Run 'python setup.py install' with an optional --prefix if you want to install it in a non-default location.
-3) Test the installation. To test the installation of pyminc library, run "python setup.py test".
-   At your option, also run the pyminc_test2.py script in the scripts folder. This program has 3 arguments:
+2) Run:
+```
+python setup.py install
+```
+ with an optional --prefix if you want to install it in a non-default location.
+3) Test the installation of the pyminc library run:
+```
+python setup.py test
+```
+4) At your option, also run the pyminc_test2.py script in the scripts folder. This program has 3 arguments:
    a minc file, a method for smoothing the volume (numpy, blitz or weave) and an output file name.

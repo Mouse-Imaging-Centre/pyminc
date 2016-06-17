@@ -69,10 +69,28 @@ MI_DIMORDER_APPARENT = c_int(0)
 MI2_OPEN_READ = c_int(1)
 MI2_OPEN_RDWR = c_int(2)
 
-MI_TYPE_DOUBLE = c_int(6)
-MI_TYPE_UBYTE = c_int(100)
 MI_CLASS_REAL = c_int(0)
-MI_TYPE_STRING = c_int(7)
+
+MI_TYPE_ORIGINAL = c_int(0)    # < MI_ORIGINAL_TYPE 
+MI_TYPE_BYTE     = c_int(1)    # < 8-bit signed integer 
+MI_TYPE_SHORT    = c_int(3)    # < 16-bit signed integer 
+MI_TYPE_INT      = c_int(4)    # < 32-bit signed integer 
+MI_TYPE_FLOAT    = c_int(5)    # < 32-bit floating point 
+MI_TYPE_DOUBLE   = c_int(6)    # < 64-bit floating point 
+MI_TYPE_STRING   = c_int(7)    # < ASCII string 
+MI_TYPE_UBYTE    = c_int(100)  # < 8-bit unsigned integer 
+MI_TYPE_USHORT   = c_int(101)  # < 16-bit unsigned integer 
+MI_TYPE_UINT     = c_int(102)  # < 32-bit unsigned integer 
+MI_TYPE_SCOMPLEX = c_int(1000) # < 16-bit signed integer complex 
+MI_TYPE_ICOMPLEX = c_int(1001) # < 32-bit signed integer complex 
+MI_TYPE_FCOMPLEX = c_int(1002) # < 32-bit floating point complex 
+MI_TYPE_DCOMPLEX = c_int(1003) # < 64-bit floating point complex 
+MI_TYPE_UNKNOWN  = c_int(-1)   # < when the type is a record 
+
+# mitype_t is an enum in libminc (libsrc2/minc2_structs.h) 
+# since it can be negative as well (-1 for MI_TYPE_UNKNOWN) 
+# this reverts to c_int
+mitype_t = c_int
 
 # opaque minc structs can be represented as pointers
 mihandle = c_void_p
@@ -154,3 +172,5 @@ libminc.micopy_attr.argtypes = [mihandle, c_stringy, mihandle]
 libminc.miconvert_voxel_to_world.argtypes = [mihandle, voxel_coord, world_coord]
 libminc.miconvert_world_to_voxel.argtypes = [mihandle, world_coord, voxel_coord]
 
+# retrieve data type from minc file
+libminc.miget_data_type.argtypes = [mihandle, POINTER(mitype_t)]
