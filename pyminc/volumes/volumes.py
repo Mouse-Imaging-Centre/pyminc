@@ -184,6 +184,19 @@ class mincVolume(object):
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
                 self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
             testMincReturn(r)
+            # set the complete flag of the volume:
+            r = libminc.miset_attribute(self.volPointer,
+                                        MI_ROOT_PATH_FOR_IMAGE_ATTR, 
+                                        "complete",
+                                        MI_TYPE_STRING,
+                                        len("true_"),
+                                        "true_")
+            testMincReturn(r)
+            # also close the volume, that way it can be used directly after
+            # writeFile() is called
+            self.closeVolume()
+                                          
+
             
     def setVolumeRanges(self, data):
         """sets volume and voxel ranges to use the maximum voxel range and the minumum necessary volume range.  This combination is makes optimal use of real valued data and integer volume types."""
