@@ -199,21 +199,38 @@ class mincVolume(object):
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
                 self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
             testMincReturn(r)
-            # set the complete flag of the volume the way it should be done:
-            r = libminc.miset_attr_values(self.volPointer, 
-                                          MI_TYPE_STRING, 
-                                          "image", 
-                                          "complete", 
-                                          5, 
-                                          "true_")
-            testMincReturn(r)
-            # it's possible that people don't have the newest version
-            # of the MINC libraries installed (the above can only be run
-            # if you have the fix that was made on June 17, 2016:
-            # https://github.com/BIC-MNI/libminc/commit/3ca34259f7d5bdae11bf77226492457cb7a1922a )
-            # so let's see if that already worked:
-            minc_complete_out = float(os.popen("minccomplete %s" % self.filename).read())
-            if not (minc_complete_out == 0.0):
+            
+            # set the complete flag of the volume. Depending on which version
+            # of libminc is being used, we can call miset_attr_values() (which
+            # is the correct function to use) or miset_attribute() (which is 
+            # a private function and should not be used). 
+            # 
+            # However, until the fix made on June 17, 2016:
+            # https://github.com/BIC-MNI/libminc/commit/3ca34259f7d5bdae11bf77226492457cb7a1922a 
+            # it is not possible to set the image:complete flag using miset_attr_values.
+            # 
+            # Right now we don't know yet which version of libminc has the fix, so
+            # the version check will always fail. We should update this when the 
+            # fix has made it into a new release of libminc.
+            # 
+            miget_version = libminc.miget_version
+            miget_version.restype = c_char_p
+            libminc_version = miget_version()
+            libminc_version_major = int(libminc_version.split('.')[0])
+            libminc_version_minor = int(libminc_version.split('.')[1])
+            libminc_version_patch = int(libminc_version.split('.')[2])
+            # this "correct" version 3.5.99 is fictive, and to be determined.
+            if (libminc_version_major >= 3 and
+                libminc_version_minor >= 5 and
+                libminc_version_patch >= 99):
+                r = libminc.miset_attr_values(self.volPointer, 
+                                              MI_TYPE_STRING, 
+                                              "image",
+                                              "complete", 
+                                              5, 
+                                              "true_")
+                testMincReturn(r)
+            else:
                 try:
                     r = libminc.miset_attribute(self.volPointer,
                                                 MI_ROOT_PATH_FOR_IMAGE_ATTR, 
