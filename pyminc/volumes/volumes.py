@@ -215,7 +215,7 @@ class mincVolume(object):
             # 
             miget_version = libminc.miget_version
             miget_version.restype = c_char_p
-            libminc_version = miget_version()
+            libminc_version = miget_version().decode()
             libminc_version_major = int(libminc_version.split('.')[0])
             libminc_version_minor = int(libminc_version.split('.')[1])
             libminc_version_patch = int(libminc_version.split('.')[2])
