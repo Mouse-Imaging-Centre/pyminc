@@ -106,6 +106,7 @@ misize_t_sizes = c_ulonglong * 5
 double_sizes = c_double * 5
 voxel_coord = c_double * 5
 world_coord = c_double * 3
+direction_cosines_array = c_double * 3
 mibool = c_int
 misize_t = c_ulonglong
 
@@ -174,3 +175,7 @@ libminc.miconvert_world_to_voxel.argtypes = [mihandle, world_coord, voxel_coord]
 
 # retrieve data type from minc file
 libminc.miget_data_type.argtypes = [mihandle, POINTER(mitype_t)]
+
+# direction cosines
+libminc.miget_dimension_cosines.argtypes = [midimhandle, direction_cosines_array]
+libminc.miset_dimension_cosines.argtypes = [midimhandle, direction_cosines_array]
