@@ -60,6 +60,8 @@ def tearDownModule():
     os.remove(inputFile_ushort)
     os.remove(inputFile_uint)
     os.remove(inputVector)
+    os.remove(newFilename)
+    os.remove(input3DdirectionCosines)
 
 class TestFromFile(unittest.TestCase):
     """test the volumeFromFile generator"""

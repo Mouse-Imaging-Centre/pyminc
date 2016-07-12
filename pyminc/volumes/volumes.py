@@ -5,6 +5,7 @@ import os
 import sys
 import datetime as datetime
 from functools import reduce
+import subprocess
 
 class mincException(Exception): pass
 class NoDataException(Exception): pass
@@ -39,7 +40,8 @@ class mincVolume(object):
         self._x_direction_cosines = None
         self._y_direction_cosines = None
         self._z_direction_cosines = None
-
+        self._data_written_to_file = False
+    
     def getDtype(self, data):
         """get the mincSizes datatype based on a numpy array"""
         dtype = None
@@ -203,11 +205,7 @@ class mincVolume(object):
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
                 self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
             testMincReturn(r)
-            
-            #
-            # set the direction cosines
-            #
-            
+            self._data_written_to_file = True
             
             # set the complete flag of the volume. Depending on which version
             # of libminc is being used, we can call miset_attr_values() (which
@@ -253,7 +251,6 @@ class mincVolume(object):
                           " even though the file was written out successfully. Perhaps you need to update"
                           " your libminc libraries.")
             # also close the volume, that way it can be used directly after
-            # writeFile() is called
             self.closeVolume()
                                           
 
@@ -590,6 +587,13 @@ class mincVolume(object):
         self._z_direction_cosines = z_dir_cosines
 
     def closeVolume(self):
+        """remove the file created on disk if we didn't actually write it out"""
+        if (not self.readonly) and (not self._data_written_to_file):
+            # the data was never written to file, delete 
+            # the file that was created, because it won't be usable
+            if self.debug:
+                print("Removing file ", self.filename,  " created on disk, because data was not written out")
+            subprocess.check_call(("rm -f %s" % self.filename).split())
         """close volume and release all pointer memory"""
         if self.volPointer is not None:  # avoid freeing memory twice
             # in the current version of miclose_volume, the dimension
@@ -609,7 +613,7 @@ class mincVolume(object):
 
     def __getitem__(self, i): 
         return self.data[i]
-
+        
     def __del__(self):
         "close file and release memory from libminc"
         self.closeVolume()
