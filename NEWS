@@ -1,3 +1,16 @@
+New in version 0.45
+===================
+* when MINC volumes are read, their volume type on disk is determined (byte, unsigned short, float etc.) and preserved. The data type of the MINC representation in Python (numpy) is double by default to maintain presicion. You do have full control over what you want the volume type on disk to be for your MINC volumes in Python.
+* code is now Python3 compatible
+* you can now specify direction cosines when creating volumes using volumeFromDescription and volumeFromData
+* default volume type for volumeLikeFile changed from ubyte to None; will be determined by the like file.
+* default volume type for volumeFromDescription changed from ubyte to ushort.
+* default volume type for volumeFromData changed from ubyte to ushort.
+* the image:complete attribute is set upon successfully writing out the data (used by minccomplete)
+* files that are not properly/fully written to disk are deleted when closeVolume() or the destructor is called (so no broken files are left behind)
+* fixed getVolumeRange(), now returns the correct data limits
+* added more tests (python setup.py test)
+
 New in Version 0.4
 ==================
 * fixed bug, such that float and double MINC files can be written to disk
