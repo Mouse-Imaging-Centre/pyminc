@@ -37,21 +37,31 @@ def volumeLikeFile(likeFilename, outputFilename, dtype="double", volumeType=None
     return(v)
 
 def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volumeType="ushort",
-                          dtype="double", labels=False):
+                          dtype="double", labels=False,
+                          x_dir_cosines=(1.0,0.0,0.0),
+                          y_dir_cosines=(0.0,1.0,0.0),
+                          z_dir_cosines=(0.0,0.0,1.0)):
     """creates a new mincVolume given starts, steps, sizes, and dimension names"""
     v = mincVolume(filename=outputFilename, dtype=dtype, readonly=False, labels=labels)
-    v.createNewDimensions(dimnames, sizes, starts, steps)
+    v.createNewDimensions(dimnames, sizes, starts, steps, 
+                          x_dir_cosines, y_dir_cosines, z_dir_cosines)
     v.createVolumeHandle(volumeType)
     v.createVolumeImage()
     return(v)
 
 def volumeFromData(outputFilename, data, dimnames=("xspace", "yspace", "zspace"),
                    starts=(0,0,0), steps=(1,1,1),
-                   volumeType="ushort", dtype="double", labels=False):
+                   volumeType="ushort", dtype="double", labels=False,
+                   x_dir_cosines=(1.0,0.0,0.0),
+                   y_dir_cosines=(0.0,1.0,0.0),
+                   z_dir_cosines=(0.0,0.0,1.0)):
     """creates a mincVolume from a given array"""
     v = volumeFromDescription(outputFilename=outputFilename, sizes=data.shape,
                               dimnames=dimnames, starts=starts, steps=steps,
-                              volumeType=volumeType, dtype=dtype, labels=labels)
+                              volumeType=volumeType, dtype=dtype, labels=labels,
+                              x_dir_cosines=x_dir_cosines,
+                              y_dir_cosines=y_dir_cosines,
+                              z_dir_cosines=z_dir_cosines)
     if v.getDtype(data):
         v.dtype = v.getDtype(data)
     v.data = data

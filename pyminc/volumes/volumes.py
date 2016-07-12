@@ -12,6 +12,7 @@ class IncorrectDimsException(Exception): pass
 class NoDataTypeException(Exception): pass
 class mincTypeNotDetermined(Exception): pass
 class volumeTypeNotDetermined(Exception): pass
+class directionCosinesNotDetermined(Exception): pass
 
 def testMincReturn(value):
     if value < 0:
@@ -35,6 +36,9 @@ class mincVolume(object):
         self.historyupdated = False  # does the history contain information about what pyminc has done?
         self.order = "C"
         self.debug = "PYMINCDEBUG" in os.environ
+        self._x_direction_cosines = None
+        self._y_direction_cosines = None
+        self._z_direction_cosines = None
 
     def getDtype(self, data):
         """get the mincSizes datatype based on a numpy array"""
@@ -199,6 +203,11 @@ class mincVolume(object):
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
                 self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
             testMincReturn(r)
+            
+            #
+            # set the direction cosines
+            #
+            
             
             # set the complete flag of the volume. Depending on which version
             # of libminc is being used, we can call miset_attr_values() (which
@@ -380,7 +389,21 @@ class mincVolume(object):
             raise mincTypeNotDetermined
         return found_type
     
-
+    def get_direction_cosines(self, dim_name):
+        direction_cosines = direction_cosines_array()
+        for i in range(len(self.dimnames)):
+            if self.dimnames[i] == dim_name:
+                r = libminc.miget_dimension_cosines(self.dims[i],
+                                                    direction_cosines)
+                testMincReturn(r)
+                if self.debug:
+                    print("Direction cosines for dimension: " + str(dim_name) + ": ", direction_cosines[:])
+                return direction_cosines
+        # if we get to this point, we were not able to extract the direction cosines:
+        sys.stderr.write("Could not retrieve direction cosines for dimension: " + dim_name)
+        raise directionCosinesNotDetermined
+        
+    
     def openFile(self):
         """reads information from MINC file"""
         r = libminc.miopen_volume(self.filename, (MI2_OPEN_RDWR, MI2_OPEN_READ)[self.readonly],
@@ -445,6 +468,13 @@ class mincVolume(object):
             # leave the current history of the input file initialized at ""
             if self.debug:
                 print("MINC file does not have a history attribute, creating one")
+        #
+        # Direction cosines
+        #
+        self._x_direction_cosines = self.get_direction_cosines('xspace')
+        self._y_direction_cosines = self.get_direction_cosines('yspace')
+        self._z_direction_cosines = self.get_direction_cosines('zspace')
+        
         self.dataLoadable = True
         
     def copyDimensions(self, otherInstance, dims=None):
@@ -468,6 +498,13 @@ class mincVolume(object):
                     print(r, otherInstance.dims[i], tmpdims[j], self.dimnames[j])
                 testMincReturn(r)
                 j = j+1
+        self._x_direction_cosines = list(range(3))
+        self._y_direction_cosines = list(range(3))
+        self._z_direction_cosines = list(range(3))
+        for i in range(3):
+            self._x_direction_cosines[i] = otherInstance._x_direction_cosines[i]
+            self._y_direction_cosines[i] = otherInstance._y_direction_cosines[i]
+            self._z_direction_cosines[i] = otherInstance._z_direction_cosines[i]
         self.dims = dimensions(*tmpdims[0:self.ndims.value])
         self.ndims = self.ndims.value
         
@@ -513,7 +550,8 @@ class mincVolume(object):
         testMincReturn(r)
         self.dataLoadable = True
         
-    def createNewDimensions(self, dimnames, sizes, starts, steps):
+    def createNewDimensions(self, dimnames, sizes, starts, steps,
+                            x_dir_cosines, y_dir_cosines, z_dir_cosines):
         """creates new dimensions for a new volume"""
         self.ndims = len(dimnames)
         tmpdims = list(range(self.ndims))
@@ -530,8 +568,26 @@ class mincVolume(object):
                 testMincReturn(r)
                 r = libminc.miset_dimension_start(tmpdims[i], starts[i])
                 testMincReturn(r)
+                if dimnames[i] == "xspace":
+                    r = libminc.miset_dimension_cosines(tmpdims[i], direction_cosines_array(x_dir_cosines[0],
+                                                                                            x_dir_cosines[1],
+                                                                                            x_dir_cosines[2]))
+                    testMincReturn(r)
+                if dimnames[i] == "yspace":
+                    r = libminc.miset_dimension_cosines(tmpdims[i], direction_cosines_array(y_dir_cosines[0],
+                                                                                            y_dir_cosines[1],
+                                                                                            y_dir_cosines[2]))
+                    testMincReturn(r)
+                if dimnames[i] == "zspace":
+                    r = libminc.miset_dimension_cosines(tmpdims[i], direction_cosines_array(z_dir_cosines[0],
+                                                                                            z_dir_cosines[1],
+                                                                                            z_dir_cosines[2]))
+                    testMincReturn(r)
         self.dims = dimensions(*tmpdims[0:self.ndims])
         self.separations = steps
+        self._x_direction_cosines = x_dir_cosines
+        self._y_direction_cosines = y_dir_cosines
+        self._z_direction_cosines = z_dir_cosines
 
     def closeVolume(self):
         """close volume and release all pointer memory"""
