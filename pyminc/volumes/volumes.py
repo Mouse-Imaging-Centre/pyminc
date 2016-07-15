@@ -6,6 +6,7 @@ import sys
 import datetime as datetime
 from functools import reduce
 import subprocess
+import numpy as numpy
 
 class mincException(Exception): pass
 class NoDataException(Exception): pass
@@ -28,7 +29,7 @@ class mincVolume(object):
         self.sizes = int_sizes()     # holds dimension sizes info
         self.dataLoadable = False    # we know enough about the file on disk to load data
         self.dataLoaded = False      # data sits inside the .data attribute
-        self.dtype = dtype           # data type for array representation (in Python)
+        self.dtype = dtype           # numpy data type for array representation (in Python) can either be a string (str) or of type numpy.dtype
         self.volumeType = None       # data type on file, will be determined by openFile()
         self.filename = filename     # the filename associated with this volume
         self.readonly = readonly     # flag indicating that volume is for reading only
@@ -41,7 +42,7 @@ class mincVolume(object):
         self._y_direction_cosines = None
         self._z_direction_cosines = None
         self._data_written_to_file = False
-    
+            
     def getDtype(self, data):
         """get the mincSizes datatype based on a numpy array"""
         dtype = None
@@ -53,6 +54,48 @@ class mincVolume(object):
                 break
         return dtype
 
+    def numpy_type_to_string(self, dtype_in_numpy_form):
+        # if the dtype is not found, return "unknown"
+        return {
+            numpy.int8    : "byte",
+            numpy.int16   : "short",
+            numpy.int32   : "int",
+            numpy.float32 : "float",
+            numpy.float64 : "double",
+            numpy.uint8   : "ubyte",
+            numpy.uint16  : "ushort",
+            numpy.uint32  : "uint",
+            "int8"    : "byte",
+            "int16"   : "short",
+            "int32"   : "int",
+            "float32" : "float",
+            "float64" : "double",
+            "uint8"   : "ubyte",
+            "uint16"  : "ushort",
+            "uint32"  : "uint",
+            numpy.dtype("int8")    : "byte",
+            numpy.dtype("int16")   : "short",
+            numpy.dtype("int32")   : "int",
+            numpy.dtype("float32") : "float",
+            numpy.dtype("float64") : "double",
+            numpy.dtype("uint8")   : "ubyte",
+            numpy.dtype("uint16")  : "ushort",
+            numpy.dtype("uint32")  : "uint",
+            }.get(dtype_in_numpy_form, "unknown")
+    
+    def get_string_form_of_numpy_dtype(self, dtype_in_numpy_form):
+        """convert the variable of type numpy.dtype in the string (str) equivalent"""
+        if type(dtype_in_numpy_form) == str:
+            if self.debug:
+                print("dtype provided to get_string_form_of_numpy_dtype was already in string format: ", dtype_in_numpy_form)
+            # it's already fine:
+            return dtype_in_numpy_form
+        string_form = self.numpy_type_to_string(dtype_in_numpy_form)
+        if string_form == "unknown":
+                sys.stderr.write("Could not convert numpy.dtype: " + str(dtype_in_numpy_form) + " to the equivalent minc format...")
+                raise NoDataException
+        return string_form
+        
     def getdata(self):
         """called when data attribute requested"""
         #print("getting data")
@@ -90,7 +133,7 @@ class mincVolume(object):
             self.dataLoaded = True
         elif self.ndims > 0:
             length = reduce(operator.mul, self.sizes[0:self.ndims])
-            self._data = zeros(length, order=self.order, dtype=self.dtype)
+            self._data = numpy.zeros(length, order=self.order, dtype=self.dtype)
             self._data.shape = self.sizes[0:self.ndims]
         else: 
             raise NoDataException
@@ -110,12 +153,17 @@ class mincVolume(object):
         if self.debug:
             print("We are loading the data from this file using dtype: ", dtype_to_get)
 
-        start = array(start[:self.ndims])
-        count = array(count[:self.ndims])
+        # dtype_to_get can be provided either as a string, or as a variable of type
+        # numpy.dtype. In the latter case, we should convert it here to the string form
+        if type(dtype_to_get) == numpy.dtype:
+            dtype_to_get = self.get_string_form_of_numpy_dtype(dtype_to_get)
+            
+        start = numpy.array(start[:self.ndims])
+        count = numpy.array(count[:self.ndims])
         size = reduce(operator.mul, count)
         if self.debug:
             print(start[:], count[:], size)
-        a = HyperSlab(zeros(count, dtype=mincSizes[dtype_to_get]["numpy"], order=self.order), 
+        a = HyperSlab(numpy.zeros(count, dtype=mincSizes[dtype_to_get]["numpy"], order=self.order), 
                       start=start, count=count, separations=self.separations) 
 
         if self.dataLoaded:
@@ -194,16 +242,23 @@ class mincVolume(object):
         if not self.dataLoadable:  # if file doesn't yet exist on disk
             self.createVolumeImage() 
         if self.dataLoaded:  # only write if data is in memory
-            # find the datatype map index
-            dtype = self.dtype
-            if not dtype:
+            # find the datatype map index. If self.dtype is of type numpy.dtype
+            # (not self.dtype) will return True...
+            if (not type(self.dtype == numpy.dtype) and 
+               self.dtype == None) :
                 sys.stderr.write("dtype unknown in writeFile...")
                 raise NoDataTypeException
             self.setVolumeRanges(self._data)
+            
+            # in the next libminc call we use the string form of the numpy representation...
+            if type(self.dtype) == numpy.dtype:
+                self.dtype = self.get_string_form_of_numpy_dtype(self.dtype)
+                
+            
             r = libminc.miset_real_value_hyperslab(
-                self.volPointer, mincSizes[dtype]["minc"],
+                self.volPointer, mincSizes[self.dtype]["minc"],
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
-                self._data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+                self._data.ctypes.data_as(POINTER(mincSizes[self.dtype]["ctype"])))
             testMincReturn(r)
             self._data_written_to_file = True
             
@@ -668,7 +723,7 @@ class mincVolume(object):
         c_voxel[:self.ndims] = voxel
         status = libminc.miconvert_voxel_to_world(self.volPointer, c_voxel, c_world)
         testMincReturn(status)
-        return array(c_world[:])
+        return numpy.array(c_world[:])
 
 
 #Jason's version of convertVoxelToWorld:
@@ -692,7 +747,7 @@ class mincVolume(object):
         c_world[:] = world
         status = libminc.miconvert_world_to_voxel(self.volPointer, c_world, c_voxel)
         testMincReturn(status)
-        return array(c_voxel[:self.ndims])
+        return numpy.array(c_voxel[:self.ndims])
         
 
 
