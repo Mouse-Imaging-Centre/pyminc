@@ -1,3 +1,11 @@
+New in version 0.46
+===================
+* when using volumeFromDescription and volumeFromData, these numpy types are now properly supported:
+numpy.int8, numpy.int16, numpy.int32, numpy.float32, numpy.float64, numpy.uint8, numpy.uint16, numpy.uint32
+numpy.dtype("int8"), numpy.dtype("int16"), numpy.dtype("int32"), numpy.dtype("float32"), numpy.dtype("float64"),
+numpy.dtype("uint8"), numpy.dtype("uint16"), numpy.dtype("uint32")
+* changed the "from numpy import *" to "import numpy as numpy" to avoid possible name space clashes
+
 New in version 0.45
 ===================
 * when MINC volumes are read, their volume type on disk is determined (byte, unsigned short, float etc.) and preserved. The data type of the MINC representation in Python (numpy) is double by default to maintain presicion. You do have full control over what you want the volume type on disk to be for your MINC volumes in Python.

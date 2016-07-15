@@ -4,7 +4,6 @@ from ctypes import *
 from ctypes.util import find_library
 import _ctypes
 import locale
-from numpy import *
 import sys
 
 # load the library
