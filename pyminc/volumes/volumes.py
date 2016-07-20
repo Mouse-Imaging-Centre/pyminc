@@ -237,7 +237,7 @@ class mincVolume(object):
         if self.readonly:
             raise IOError("Writing to file %s which has been opened in readonly mode" % self.filename)
         if not self.historyupdated:
-            addToHist = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " >>> (default history added after pyminc usage) " + " ".join(sys.argv)
+            addToHist = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") + " >>> (default history added after pyminc usage) " + " ".join(sys.argv) + "\n"
             self.appendAndWriteHistory(history=addToHist)
         if not self.dataLoadable:  # if file doesn't yet exist on disk
             self.createVolumeImage() 
