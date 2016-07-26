@@ -7,6 +7,9 @@ Documentation can be found in the tutorial section of the MINC Wikibooks (Progra
 
 http://en.wikibooks.org/wiki/MINC/Tutorials
 
+and some of the basics are described here:
+
+https://github.com/Mouse-Imaging-Centre/pyminc/wiki
 *****
 
 Requirements:
