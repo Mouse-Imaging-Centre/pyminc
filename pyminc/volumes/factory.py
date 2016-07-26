@@ -1,6 +1,6 @@
 """factories for creating mincVolumes"""
 
-from .volumes import mincException,mincVolume
+from .volumes import mincException, mincVolume, getDtype
 
 def volumeFromFile(filename, dtype="double", readonly=True, labels=False):
     """creates a new mincVolume from existing file."""
@@ -51,18 +51,23 @@ def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volume
 
 def volumeFromData(outputFilename, data, dimnames=("xspace", "yspace", "zspace"),
                    starts=(0,0,0), steps=(1,1,1),
-                   volumeType="ushort", dtype="double", labels=False,
+                   volumeType="ushort", dtype=None, labels=False,
                    x_dir_cosines=(1.0,0.0,0.0),
                    y_dir_cosines=(0.0,1.0,0.0),
                    z_dir_cosines=(0.0,0.0,1.0)):
     """creates a mincVolume from a given array"""
+    # deal with the dtype. If the dtype was not set, use the dtype of the 
+    # data block. If that is not possible, default to double.
+    if dtype == None:
+        if getDtype(data):
+            dtype = getDtype(data)
+        else:
+            dtype = "double"
     v = volumeFromDescription(outputFilename=outputFilename, sizes=data.shape,
                               dimnames=dimnames, starts=starts, steps=steps,
                               volumeType=volumeType, dtype=dtype, labels=labels,
                               x_dir_cosines=x_dir_cosines,
                               y_dir_cosines=y_dir_cosines,
                               z_dir_cosines=z_dir_cosines)
-    if v.getDtype(data):
-        v.dtype = v.getDtype(data)
     v.data = data
     return v

@@ -757,6 +757,30 @@ class TestWriteFileDataTypes(unittest.TestCase):
         pipe.close()
         self.assertAlmostEqual(output, data_block.mean(), 8)
     ############################################################################
+    # using volumeFromData specifying the dtype from a numpy array
+    ############################################################################
+    def testWriteDataFromNumpyByte(self):
+        """ensure that a volume created by volumeFromData uses the dtype of the datablock by default"""
+        data_block = N.arange(24000, dtype="byte").reshape(20,30,40)
+        v = volumeFromData(outputFilename, data_block,
+                           dimnames=("xspace", "yspace", "zspace"),
+                           starts=(0, 0, 0),
+                           steps=(1, 1, 1),
+                           volumeType="ushort")
+        v.writeFile()
+        self.assertEqual(v.dtype, "byte")
+    def testWriteDataFromNumpyChangeDtype(self):
+        """ensure that a volume created by volumeFromData can overwrite the dtype if set explicitly"""
+        data_block = N.arange(24000, dtype="ushort").reshape(20,30,40)
+        v = volumeFromData(outputFilename, data_block,
+                           dimnames=("xspace", "yspace", "zspace"),
+                           starts=(0, 0, 0),
+                           steps=(1, 1, 1),
+                           volumeType="ushort",
+                           dtype="float")
+        v.writeFile()
+        self.assertEqual(v.dtype, "float")
+    ############################################################################
     # writeFile() sets the image:complete flag
     ############################################################################
     def testSettingImageCompleteFlag(self):
