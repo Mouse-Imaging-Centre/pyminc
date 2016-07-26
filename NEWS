@@ -1,3 +1,9 @@
+New in version 0.47
+===================
+* the dtype for a volume created by volumeFromData is based on the data block provided, but can be overwritten using the dtype argument
+* fixed the history entry: ends with a newline, which means that subsequent entries in the history are properly separated
+* label files are not read in as double by default anymore, but as one of the unsigned integer types. 
+
 New in version 0.46
 ===================
 * when using volumeFromDescription and volumeFromData, these numpy types are now properly supported:
