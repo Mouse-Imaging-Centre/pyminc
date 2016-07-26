@@ -46,11 +46,12 @@ class mincVolume(object):
     def getDtype(self, data):
         """get the mincSizes datatype based on a numpy array"""
         dtype = None
-        for type in mincSizes:
+        for m_type in mincSizes:
             if self.debug:
-                print("TYPE:", type, data.dtype, mincSizes[type]["numpy"] )
-            if mincSizes[type]["numpy"] == data.dtype:
-                dtype = type
+                print("TYPE: " + str(m_type) + " " + str(data.dtype) + 
+                      " " + str(mincSizes[m_type]["numpy"]))
+            if mincSizes[m_type]["numpy"] == data.dtype:
+                dtype = m_type
                 break
         return dtype
 
@@ -87,7 +88,7 @@ class mincVolume(object):
         """convert the variable of type numpy.dtype in the string (str) equivalent"""
         if type(dtype_in_numpy_form) == str:
             if self.debug:
-                print("dtype provided to get_string_form_of_numpy_dtype was already in string format: ", dtype_in_numpy_form)
+                print("dtype provided to get_string_form_of_numpy_dtype was already in string format: " + dtype_in_numpy_form)
             # it's already fine:
             return dtype_in_numpy_form
         string_form = self.numpy_type_to_string(dtype_in_numpy_form)
@@ -113,19 +114,19 @@ class mincVolume(object):
             print("setting data")
         if newdata.shape != tuple(self.sizes[0:self.ndims]):
             if self.debug:
-                print("Shapes", newdata.shape, self.sizes[0:self.ndims])
+                print("Shapes: " + str(newdata.shape) + " " + str(self.sizes[0:self.ndims]))
             raise IncorrectDimsException
         else:
             # make sure we don't change the data type of the data
             self._data = newdata.astype(self.dtype)
             self.dataLoaded = True
             if self.debug:
-                print("New Shape:", self.data.shape)
+                print("New Shape: " + str(self.data.shape))
 
     def loadData(self):
         """loads the data from file into the data attribute"""
         if self.debug:
-            print("size", self.sizes[:])
+            print("size: "  + str(self.sizes[:]))
         if self.dataLoadable:
             self._data = self.getHyperslab(int_sizes(), self.sizes[0:self.ndims], 
                                            self.dtype)
@@ -151,7 +152,7 @@ class mincVolume(object):
         if self.dataLoadable == False:
             raise NoDataException
         if self.debug:
-            print("We are loading the data from this file using dtype: ", dtype_to_get)
+            print("We are loading the data from this file using dtype: " + str(dtype_to_get))
 
         # dtype_to_get can be provided either as a string, or as a variable of type
         # numpy.dtype. In the latter case, we should convert it here to the string form
@@ -449,7 +450,7 @@ class mincVolume(object):
                                                     direction_cosines)
                 testMincReturn(r)
                 if self.debug:
-                    print("Direction cosines for dimension: " + str(dim_name) + ": ", direction_cosines[:])
+                    print("Direction cosines for dimension: " + str(dim_name) + ": " + str(direction_cosines[:]))
                 return direction_cosines
         # if we get to this point, we were not able to extract the direction cosines:
         sys.stderr.write("Could not retrieve direction cosines for dimension: " + dim_name)
@@ -467,7 +468,7 @@ class mincVolume(object):
         testMincReturn(r)
         self.volumeType = self.getMincSizesFromMincType(file_datatype)
         if self.debug:
-            print("Datatype of the input file: ", self.volumeType)
+            print("Datatype of the input file: " + str(self.volumeType))
         # if the dtype was not explicitly set, set it to double in order
         # not to lose any precision while working with the data
         # unless we are reading in labels (a segmentation) file. In
@@ -489,7 +490,7 @@ class mincVolume(object):
                     print("Changed the dtype of the data being to be " + str(self.dtype) + " to reflect label/segmentation data.")
                 
         if self.debug:
-            print("Datatype of the numpy array: ", self.dtype)
+            print("Datatype of the numpy array: " + str(self.dtype))
         ndims = c_int(0)
         libminc.miget_volume_dimension_count(self.volPointer,
                                              MI_DIMCLASS_ANY,
@@ -505,28 +506,28 @@ class mincVolume(object):
         r = libminc.miget_dimension_sizes(self.dims, self.ndims_misize_t, self.sizes)
         testMincReturn(r)
         if self.debug:
-            print("sizes", self.sizes[0:self.ndims])
+            print("sizes: " + str(self.sizes[0:self.ndims]))
         seps = double_sizes()
         r = libminc.miget_dimension_separations(self.dims, MI_DIMORDER_APPARENT,
                                                 self.ndims_misize_t, seps)
         testMincReturn(r)
         self.separations = seps[0:self.ndims]
         if self.debug:
-            print("separations", self.separations)
+            print("separations: " + str(self.separations))
         starts = double_sizes()
         r = libminc.miget_dimension_starts(self.dims, MI_DIMORDER_APPARENT,
                                            self.ndims_misize_t, starts)
         testMincReturn(r)
         self.starts = starts[0:self.ndims]
         if self.debug:
-            print("starts", self.starts)
+            print("starts: " + str(self.starts))
         self.dimnames = []
         for i in range(self.ndims):
             name = c_stringy("")
             r = libminc.miget_dimension_name(self.dims[i], name)
             self.dimnames.append(name.value.decode(encoding))  # FIXME # TODO: mifree_name(name)
         if self.debug:
-            print("dimnames:", self.dimnames)
+            print("dimnames: " + str(self.dimnames))
         try:
             self.history = self.getHistory(size=999999)        
         except mincException:
@@ -563,7 +564,9 @@ class mincVolume(object):
                 self.dimnames[j] = otherInstance.dimnames[i]
                 r = libminc.micopy_dimension(otherInstance.dims[i], tmpdims[j])
                 if self.debug:
-                    print(r, otherInstance.dims[i], tmpdims[j], self.dimnames[j])
+                    print("Return from micopy_dimension: " + str(r) + " " + 
+                          str(otherInstance.dims[i]) + " " + str(tmpdims[j]) +
+                          " " + str(self.dimnames[j]))
                 testMincReturn(r)
                 j = j+1
         self._x_direction_cosines = list(range(3))
@@ -602,14 +605,14 @@ class mincVolume(object):
         if volumeType:
             self.volumeType = volumeType
         if self.debug:
-            print(self.ndims, self.dims[0:self.ndims])
+            print("Number of dimensions: " + str(self.ndims) + " " + str(self.dims[0:self.ndims]))
         r = libminc.micreate_volume(self.filename, self.ndims, self.dims, 
                                     mincSizes[volumeType]["minc"], MI_CLASS_REAL,
                                     None, self.volPointer)
         testMincReturn(r)
         r = libminc.miget_dimension_sizes(self.dims, self.ndims, self.sizes)
         if self.debug:
-            print("sizes", self.sizes[0:self.ndims])
+            print("sizes: " + str(self.sizes[0:self.ndims]))
         testMincReturn(r)
         
     def createVolumeImage(self):
@@ -663,7 +666,7 @@ class mincVolume(object):
             # the data was never written to file, delete 
             # the file that was created, because it won't be usable
             if self.debug:
-                print("Removing file ", self.filename,  " created on disk, because data was not written out")
+                print("Removing file " + str(self.filename) + " created on disk, because data was not written out")
             subprocess.check_call(("rm -f %s" % self.filename).split())
         """close volume and release all pointer memory"""
         if self.volPointer is not None:  # avoid freeing memory twice
@@ -695,7 +698,7 @@ class mincVolume(object):
     #adding history to minc files, history should be a string
     def appendAndWriteHistory(self, history):
         if self.debug:
-            print("adding to history :", history)
+            print("adding to history :" + str(history))
         fullHistory = self.history.value + history.encode(encoding)
         self.history = create_string_buffer(fullHistory)
         r = libminc.miadd_history_attr(self.volPointer, len(self.history), self.history)
