@@ -470,8 +470,24 @@ class mincVolume(object):
             print("Datatype of the input file: ", self.volumeType)
         # if the dtype was not explicitly set, set it to double in order
         # not to lose any precision while working with the data
-        if not self.dtype:
+        # unless we are reading in labels (a segmentation) file. In
+        # which case we should read that in as ushort (i.e. integers)
+        if not self.dtype and not self.labels:
             self.dtype = "double"
+        if self.labels and self.dtype not in ["ubyte", "ushort", "uint"]:
+            # the dtype should reflect integers of some sort. This
+            # should also be unsigned, because negative label values
+            # don't make sense
+            if not self.volumeType in ["ubyte", "ushort", "uint"]:
+                # set it to be the largest possible:
+                self.dtype = "uint"
+                if self.debug:
+                    print("Changed the dtype of the data being to be uint to reflect label/segmentation data.")
+            else:
+                self.dtype = self.volumeType
+                if self.debug:
+                    print("Changed the dtype of the data being to be " + str(self.dtype) + " to reflect label/segmentation data.")
+                
         if self.debug:
             print("Datatype of the numpy array: ", self.dtype)
         ndims = c_int(0)
