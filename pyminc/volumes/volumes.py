@@ -20,6 +20,15 @@ def testMincReturn(value):
     if value < 0:
         raise mincException
 
+def getDtype(data):
+    """get the mincSizes datatype based on a numpy array"""
+    dtype = None
+    for m_type in mincSizes:
+        if mincSizes[m_type]["numpy"] == data.dtype:
+            dtype = m_type
+            break
+    return dtype
+        
 class mincVolume(object):
     def __init__(self, filename=None, dtype=None, readonly=True, labels=False):
         self.volPointer = mihandle() # holds the pointer to the mihandle
@@ -43,17 +52,6 @@ class mincVolume(object):
         self._z_direction_cosines = None
         self._data_written_to_file = False
             
-    def getDtype(self, data):
-        """get the mincSizes datatype based on a numpy array"""
-        dtype = None
-        for m_type in mincSizes:
-            if self.debug:
-                print("TYPE: " + str(m_type) + " " + str(data.dtype) + 
-                      " " + str(mincSizes[m_type]["numpy"]))
-            if mincSizes[m_type]["numpy"] == data.dtype:
-                dtype = m_type
-                break
-        return dtype
 
     def numpy_type_to_string(self, dtype_in_numpy_form):
         # if the dtype is not found, return "unknown"
@@ -218,7 +216,7 @@ class mincVolume(object):
             ctype_start = misize_t_sizes(*start[:self.ndims])
             ctype_count = misize_t_sizes(*count[:self.ndims])
             # find the datatype map index
-            dtype = self.getDtype(data)
+            dtype = getDtype(data)
             self.setVolumeRanges(data)
             if self.debug:
                 print("before setting of hyperslab")
