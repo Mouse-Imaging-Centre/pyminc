@@ -286,19 +286,19 @@ class mincVolume(object):
                 libminc_version_patch >= 99):
                 r = libminc.miset_attr_values(self.volPointer, 
                                               MI_TYPE_STRING, 
-                                              "image",
-                                              "complete", 
+                                              c_stringy("image"),
+                                              c_stringy("complete"), 
                                               5, 
-                                              "true_")
+                                              c_stringy("true_"))
                 testMincReturn(r)
             else:
                 try:
                     r = libminc.miset_attribute(self.volPointer,
                                                 MI_ROOT_PATH_FOR_IMAGE_ATTR, 
-                                                "complete",
+                                                c_stringy("complete"),
                                                 MI_TYPE_STRING,
                                                 5,
-                                                "true_")
+                                                c_stringy("true_"))
                     testMincReturn(r)
                 except mincException:
                     print("Warning/Info: could not set the image:complete flag for file: " + self.filename +

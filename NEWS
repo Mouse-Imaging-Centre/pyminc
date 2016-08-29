@@ -1,3 +1,8 @@
+New in version 0.48
+===================
+* changes to the calls to miset_attribute and miset_attr_values in order to properly set the image:complete flag
+* some fixes to the tests in order to avoid warning messages
+
 New in version 0.47
 ===================
 * the dtype for a volume created by volumeFromData is based on the data block provided, but can be overwritten using the dtype argument
