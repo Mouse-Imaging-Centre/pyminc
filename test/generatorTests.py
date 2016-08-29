@@ -983,18 +983,21 @@ class testDirectionCosines(unittest.TestCase):
         
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(v._x_direction_cosines[0], float(from_file[0]), 8)
         self.assertAlmostEqual(v._x_direction_cosines[1], float(from_file[1]), 8)
         self.assertAlmostEqual(v._x_direction_cosines[2], float(from_file[2]), 8)
         
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(v._y_direction_cosines[0], float(from_file[0]), 8)
         self.assertAlmostEqual(v._y_direction_cosines[1], float(from_file[1]), 8)
         self.assertAlmostEqual(v._y_direction_cosines[2], float(from_file[2]), 8)
         
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(v._z_direction_cosines[0], float(from_file[0]), 8)
         self.assertAlmostEqual(v._z_direction_cosines[1], float(from_file[1]), 8)
         self.assertAlmostEqual(v._z_direction_cosines[2], float(from_file[2]), 8)
@@ -1007,18 +1010,21 @@ class testDirectionCosines(unittest.TestCase):
         
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), 1.0, 8)
         self.assertAlmostEqual(float(from_file[1]), 0.0, 8)
         self.assertAlmostEqual(float(from_file[2]), 0.0, 8)
         
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), 0.0, 8)
         self.assertAlmostEqual(float(from_file[1]), 1.0, 8)
         self.assertAlmostEqual(float(from_file[2]), 0.0, 8)
 
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), 0.0, 8)
         self.assertAlmostEqual(float(from_file[1]), 0.0, 8)
         self.assertAlmostEqual(float(from_file[2]), 1.0, 8)
@@ -1032,8 +1038,10 @@ class testDirectionCosines(unittest.TestCase):
         ### X
         pipe_out = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % outputFilename, "r")
         from_file_out = pipe_out.read().rstrip().split(" ")
+        pipe_out.close()
         pipe_in = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file_in = pipe_in.read().rstrip().split(" ")
+        pipe_in.close()
         
         self.assertAlmostEqual(float(from_file_out[0]), float(from_file_in[0]), 8)
         self.assertAlmostEqual(float(from_file_out[1]), float(from_file_in[1]), 8)
@@ -1042,8 +1050,10 @@ class testDirectionCosines(unittest.TestCase):
         ### Y
         pipe_out = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % outputFilename, "r")
         from_file_out = pipe_out.read().rstrip().split(" ")
+        pipe_out.close()
         pipe_in = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file_in = pipe_in.read().rstrip().split(" ")
+        pipe_in.close()
         
         self.assertAlmostEqual(float(from_file_out[0]), float(from_file_in[0]), 8)
         self.assertAlmostEqual(float(from_file_out[1]), float(from_file_in[1]), 8)
@@ -1052,8 +1062,10 @@ class testDirectionCosines(unittest.TestCase):
         ### Z
         pipe_out = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % outputFilename, "r")
         from_file_out = pipe_out.read().rstrip().split(" ")
+        pipe_out.close()
         pipe_in = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file_in = pipe_in.read().rstrip().split(" ")
+        pipe_in.close()
         
         self.assertAlmostEqual(float(from_file_out[0]), float(from_file_in[0]), 8)
         self.assertAlmostEqual(float(from_file_out[1]), float(from_file_in[1]), 8)
@@ -1095,18 +1107,21 @@ class testDirectionCosines(unittest.TestCase):
         
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % newFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), x0, 8)
         self.assertAlmostEqual(float(from_file[1]), x1, 8)
         self.assertAlmostEqual(float(from_file[2]), x2, 8)
         
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % newFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), y0, 8)
         self.assertAlmostEqual(float(from_file[1]), y1, 8)
         self.assertAlmostEqual(float(from_file[2]), y2, 8)
 
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % newFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), z0, 8)
         self.assertAlmostEqual(float(from_file[1]), z1, 8)
         self.assertAlmostEqual(float(from_file[2]), z2, 8)
@@ -1149,18 +1164,21 @@ class testDirectionCosines(unittest.TestCase):
         
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), x0, 8)
         self.assertAlmostEqual(float(from_file[1]), x1, 8)
         self.assertAlmostEqual(float(from_file[2]), x2, 8)
         
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), y0, 8)
         self.assertAlmostEqual(float(from_file[1]), y1, 8)
         self.assertAlmostEqual(float(from_file[2]), y2, 8)
 
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
+        pipe.close()
         self.assertAlmostEqual(float(from_file[0]), z0, 8)
         self.assertAlmostEqual(float(from_file[1]), z1, 8)
         self.assertAlmostEqual(float(from_file[2]), z2, 8)
