@@ -82,6 +82,42 @@ class mincVolume(object):
             numpy.dtype("uint32")  : "uint",
             }.get(dtype_in_numpy_form, "unknown")
     
+    def get_numpy_dtype(self):
+        return {
+            numpy.int8    : numpy.int8,
+            numpy.int16   : numpy.int16,
+            numpy.int32   : numpy.int32,
+            numpy.float32 : numpy.float32,
+            numpy.float64 : numpy.float64,
+            numpy.uint8   : numpy.uint8,
+            numpy.uint16  : numpy.uint16,
+            numpy.uint32  : numpy.uint32,
+            "int8"    : numpy.int8,
+            "byte"    : numpy.int8,
+            "int16"   : numpy.int16,
+            "short"   : numpy.int16,
+            "int32"   : numpy.int32,
+            "int"     : numpy.int32,
+            "float32" : numpy.float32,
+            "float"   : numpy.float32,
+            "float64" : numpy.float64,
+            "double"  : numpy.float64,
+            "uint8"   : numpy.uint8,
+            "ubyte"   : numpy.uint8,
+            "uint16"  : numpy.uint16,
+            "ushort"  : numpy.uint16,
+            "uint32"  : numpy.uint32,
+            "uint"    : numpy.uint32,
+            numpy.dtype("int8")    : numpy.int8,
+            numpy.dtype("int16")   : numpy.int16,
+            numpy.dtype("int32")   : numpy.int32,
+            numpy.dtype("float32") : numpy.float32,
+            numpy.dtype("float64") : numpy.float64,
+            numpy.dtype("uint8")   : numpy.uint8,
+            numpy.dtype("uint16")  : numpy.uint16,
+            numpy.dtype("uint32")  : numpy.uint32,
+            }.get(self.dtype, "unknown")
+    
     def get_string_form_of_numpy_dtype(self, dtype_in_numpy_form):
         """convert the variable of type numpy.dtype in the string (str) equivalent"""
         if type(dtype_in_numpy_form) == str:
@@ -116,7 +152,11 @@ class mincVolume(object):
             raise IncorrectDimsException
         else:
             # make sure we don't change the data type of the data
-            self._data = newdata.astype(self.dtype)
+            # we also need to provide the dtype here in a format
+            # that won't confuse numpy. If you supply "float" to
+            # astype(), it'll default to "float64" which we actually
+            # consider to be "double".
+            self._data = newdata.astype(self.get_numpy_dtype())
             self.dataLoaded = True
             if self.debug:
                 print("New Shape: " + str(self.data.shape))
