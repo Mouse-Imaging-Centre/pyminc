@@ -1,3 +1,8 @@
+New in version 0.49
+===================
+* bug fix related to dtype="float". The data of the pyminc object was cast to be "float64" which is 
+  double. 
+
 New in version 0.48
 ===================
 * changes to the calls to miset_attribute and miset_attr_values in order to properly set the image:complete flag
