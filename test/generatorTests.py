@@ -48,6 +48,14 @@ subprocess.check_call(['rawtominc', input3DdirectionCosines, '-input', '/dev/ura
                        '-ydircos', '-0.1958356912',  '0.96692346178', '0.16316734231',
                        '-zdircos', '-9.3093890238', '-0.21882376893', '0.92542348732'])
 
+# testing for applying transformations to coordinates:
+outputXfmFilename1 = tempfile.NamedTemporaryFile(prefix="test-xfm-1", suffix=".xfm").name
+outputXfmFilename2 = tempfile.NamedTemporaryFile(prefix="test-xfm-2", suffix=".xfm").name
+outputXfmFilename3 = tempfile.NamedTemporaryFile(prefix="test-xfm-3", suffix=".xfm").name
+subprocess.check_call(["param2xfm", "-center", '2.21', '-3.765', '4.09', "-translation", '1.23', '6.4', '-7.8', "-scales", '0.2', '4.3', '-3', outputXfmFilename1])
+subprocess.check_call(["param2xfm", "-center", '-23.98', '0.46', '9.5', "-translation", '0.0', '-46', '89.3', "-scales", '10', '7.33', '84', outputXfmFilename2])
+subprocess.check_call(["xfmconcat", outputXfmFilename1, outputXfmFilename2, outputXfmFilename3])
+
                        
 
 def tearDownModule():
@@ -1203,6 +1211,42 @@ class testDirectionCosines(unittest.TestCase):
         
         v.writeFile()
         in_v.closeVolume()
+
+class testXfmsAppliedToCoordinates(unittest.TestCase):
+    """test that xfm files can be used to transform x,y,z coordinates"""
+    def testForwardTransformSingleXfm(self):
+        """testing coordinates transformed using the forward transform and a single transformation"""
+        
+        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00)
+        self.assertAlmostEqual(new_x, 4.33400016486645, 8)
+        self.assertAlmostEqual(new_y, 32.3265016365052, 8)
+        self.assertAlmostEqual(new_z, -12.4399995803833, 8)
+    
+    def testInverseTransformSingleXfm(self):
+        """testing coordinates transformed using the inverse transform and a single transformation"""
+        
+        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00, use_inverse=True)
+        self.assertAlmostEqual(new_x, 18.4099990008772, 8)
+        self.assertAlmostEqual(new_y, -3.64755821904214, 8)
+        self.assertAlmostEqual(new_z, 0.520000139872233, 8)
+    
+    def testForwardTransformConcatenatedXfm(self):
+        """testing coordinates transformed using the forward transform and a concatenated transformation"""
+        
+        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00)
+        self.assertAlmostEqual(new_x, 259.159993714094, 8)
+        self.assertAlmostEqual(new_y, 188.041454144745, 8)
+        self.assertAlmostEqual(new_z, -1744.15997695923, 8)
+    
+    def testInverseTransformConcatenatedXfm(self):
+        """testing coordinates transformed using the inverse transform and a concatenated transformation"""
+        
+        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00, use_inverse=True)
+        self.assertAlmostEqual(new_x, -119.559994975925, 8)
+        self.assertAlmostEqual(new_y, -2.72634880128239, 8)
+        self.assertAlmostEqual(new_z, 0.0509524723840147, 8)
+    
+        
         
 if __name__ == "__main__":
     unittest.main()
