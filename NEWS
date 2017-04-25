@@ -1,3 +1,7 @@
+New in version 0.50
+===================
+* added support for transforming x,y,z coordinates using an xfm file: transform_xyz_coordinates_using_xfm()
+
 New in version 0.49
 ===================
 * bug fix related to dtype="float". The data of the pyminc object was cast to be "float64" which is 
