@@ -70,6 +70,9 @@ def tearDownModule():
     os.remove(inputVector)
     os.remove(newFilename)
     os.remove(input3DdirectionCosines)
+    os.remove(outputXfmFilename1)
+    os.remove(outputXfmFilename2)
+    os.remove(outputXfmFilename3)
 
 class TestFromFile(unittest.TestCase):
     """test the volumeFromFile generator"""
