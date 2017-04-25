@@ -1,6 +1,6 @@
 """factories for creating mincVolumes"""
 
-from .volumes import mincException, mincVolume, getDtype
+from .volumes import mincException, mincVolume, getDtype, transform_xyz_coordinates_using_xfm
 
 def volumeFromFile(filename, dtype="double", readonly=True, labels=False):
     """creates a new mincVolume from existing file."""

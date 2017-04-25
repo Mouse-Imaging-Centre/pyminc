@@ -124,6 +124,26 @@ c_stringy = c_py3_unicode_p if sys.version_info.major >= 3 else c_char_p
 
 MI_ROOT_PATH_FOR_IMAGE_ATTR=c_stringy("/minc-2.0/image/0/image")
 
+# python declaration of the VIO_General_transform struct 
+class GeneralTransform(Structure):
+    pass
+GeneralTransform._fields_ = [("type",        c_int),
+                ("inverse_flag",             mibool),
+                ("linear_transform",         c_double),
+                ("inverse_linear_transform", c_double),
+                ("n_points",                 c_int),
+                ("n_dimensions",             c_int),
+                ("points",                   POINTER(POINTER(c_double))),
+                ("displacements",            POINTER(POINTER(c_double))),
+                ("displacement_volume",      c_void_p),
+                ("displacement_volume_file", c_stringy),
+                ("user_data",                c_void_p),
+                ("size_user_data",           c_ulonglong),
+                ("user_transform_function",  c_void_p),
+                ("user_inverse_transform_function", c_void_p),
+                ("n_transforms",             c_int),
+                ("transforms",               POINTER(GeneralTransform))]
+
 # argument declarations - not really necessary but does make
 # segfaults a bit easier to avoid.
 libminc.miopen_volume.argtypes = [c_stringy, c_int, POINTER(mihandle)]
@@ -178,3 +198,14 @@ libminc.miget_data_type.argtypes = [mihandle, POINTER(mitype_t)]
 # direction cosines
 libminc.miget_dimension_cosines.argtypes = [midimhandle, direction_cosines_array]
 libminc.miset_dimension_cosines.argtypes = [midimhandle, direction_cosines_array]
+
+# deal with transformations for tag point coordinates
+libminc.input_transform_file.argtypes = [c_stringy, POINTER(GeneralTransform)]
+
+libminc.general_transform_point.argtypes = [POINTER(GeneralTransform),
+                                            c_double, c_double, c_double,
+                                            POINTER(c_double), POINTER(c_double), POINTER(c_double)]
+libminc.general_inverse_transform_point.argtypes = [POINTER(GeneralTransform),
+                                            c_double, c_double, c_double,
+                                            POINTER(c_double), POINTER(c_double), POINTER(c_double)]
+libminc.delete_general_transform.argtypes = [POINTER(GeneralTransform)]

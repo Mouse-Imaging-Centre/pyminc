@@ -28,7 +28,31 @@ def getDtype(data):
             dtype = m_type
             break
     return dtype
-        
+
+# access to libminc functions used to transform coordinates (x,y,z)
+def transform_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, use_inverse=False):
+    # read the transformation file
+    handle_for_transform = GeneralTransform()
+    r = libminc.input_transform_file(xfm_filename, handle_for_transform)
+    testMincReturn(r)
+    # holders for the transformed coordinates
+    new_x = c_double()
+    new_y = c_double()
+    new_z = c_double()
+    if use_inverse:
+        r = libminc.general_inverse_transform_point(handle_for_transform,
+                                                    c_double(x_coor), c_double(y_coor), c_double(z_coor),
+                                                    byref(new_x), byref(new_y), byref(new_z))
+    else:
+        r = libminc.general_transform_point(handle_for_transform,
+                                            c_double(x_coor), c_double(y_coor), c_double(z_coor),
+                                            byref(new_x), byref(new_y), byref(new_z))
+    testMincReturn(r)
+    # free up memory
+    libminc.delete_general_transform(handle_for_transform)
+    # return transformed values
+    return (new_x.value, new_y.value, new_z.value)
+
 class mincVolume(object):
     def __init__(self, filename=None, dtype=None, readonly=True, labels=False):
         self.volPointer = mihandle() # holds the pointer to the mihandle
