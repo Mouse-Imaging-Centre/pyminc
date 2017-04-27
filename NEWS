@@ -1,3 +1,9 @@
+New in version 0.51
+===================
+* turns out that for memory/time efficiency, you really want to load a transformation grid into memory
+  only once and apply it to as many coordinates as you can. So added the ability to do just that:
+  transform_multiple_xyz_coordinates_using_xfm() accepts arrays of x,y,z coordinates
+
 New in version 0.50
 ===================
 * added support for transforming x,y,z coordinates using an xfm file: transform_xyz_coordinates_using_xfm()

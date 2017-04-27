@@ -29,29 +29,55 @@ def getDtype(data):
             break
     return dtype
 
-# access to libminc functions used to transform coordinates (x,y,z)
-def transform_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, use_inverse=False):
+def transform_multiple_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, use_inverse=False):    
+    # make sure we have the same number of input coordinates for x y and z
+    if (len(x_coor) != len(y_coor) or
+        len(y_coor) != len(z_coor) ):
+        raise ValueError("The function transform_multiple_xyz_coordinates_using_xfm was provided with incorrect coordinate data. The length of the lists differ.")
+    
     # read the transformation file
     handle_for_transform = GeneralTransform()
     r = libminc.input_transform_file(xfm_filename, handle_for_transform)
     testMincReturn(r)
+    
+    # return arrays
+    ret_x = []
+    ret_y = []
+    ret_z = []
+    
     # holders for the transformed coordinates
     new_x = c_double()
     new_y = c_double()
     new_z = c_double()
-    if use_inverse:
-        r = libminc.general_inverse_transform_point(handle_for_transform,
-                                                    c_double(x_coor), c_double(y_coor), c_double(z_coor),
-                                                    byref(new_x), byref(new_y), byref(new_z))
-    else:
-        r = libminc.general_transform_point(handle_for_transform,
-                                            c_double(x_coor), c_double(y_coor), c_double(z_coor),
-                                            byref(new_x), byref(new_y), byref(new_z))
-    testMincReturn(r)
+    
+    for i in range(len(x_coor)):
+        if use_inverse:
+            r = libminc.general_inverse_transform_point(handle_for_transform,
+                                                        c_double(x_coor[i]), c_double(y_coor[i]), c_double(z_coor[i]),
+                                                        byref(new_x), byref(new_y), byref(new_z))
+        else:
+            r = libminc.general_transform_point(handle_for_transform,
+                                                c_double(x_coor[i]), c_double(y_coor[i]), c_double(z_coor[i]),
+                                                byref(new_x), byref(new_y), byref(new_z))
+        testMincReturn(r)
+        ret_x += [new_x.value]
+        ret_y += [new_y.value]
+        ret_z += [new_z.value]
+        
     # free up memory
     libminc.delete_general_transform(handle_for_transform)
     # return transformed values
-    return (new_x.value, new_y.value, new_z.value)
+    return (ret_x, ret_y, ret_z)
+
+# access to libminc functions used to transform coordinates (x,y,z)
+def transform_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, use_inverse=False):
+    ret_x_array, rey_y_array, rey_z_array = transform_multiple_xyz_coordinates_using_xfm(xfm_filename,
+                                                                                         [x_coor],
+                                                                                         [y_coor],
+                                                                                         [z_coor],
+                                                                                         use_inverse=use_inverse)
+    return (ret_x_array[0], rey_y_array[0], rey_z_array[0])
+
 
 class mincVolume(object):
     def __init__(self, filename=None, dtype=None, readonly=True, labels=False):
