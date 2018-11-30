@@ -294,9 +294,9 @@ class mincVolume(object):
             raise IOError("Writing to file %s which has been opened in readonly mode" % self.filename)
         if not self.dataLoadable:
             self.createVolumeImage() 
-        if not count:
+        if count is None:
             count = data.count
-        if not start:
+        if start is None:
             start = data.start
             
         if self.dataLoaded:

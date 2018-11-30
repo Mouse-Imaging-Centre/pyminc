@@ -124,13 +124,18 @@ c_stringy = c_py3_unicode_p if sys.version_info.major >= 3 else c_char_p
 
 MI_ROOT_PATH_FOR_IMAGE_ATTR=c_stringy("/minc-2.0/image/0/image")
 
+# python declaration of the VIO_Transform struct 
+class Transform(Structure):
+    pass
+Transform._fields_ = [("m",                  (c_double * 4) * 4)]
+
 # python declaration of the VIO_General_transform struct 
 class GeneralTransform(Structure):
     pass
 GeneralTransform._fields_ = [("type",        c_int),
                 ("inverse_flag",             mibool),
-                ("linear_transform",         c_double),
-                ("inverse_linear_transform", c_double),
+                ("linear_transform",         Transform),
+                ("inverse_linear_transform", Transform),
                 ("n_points",                 c_int),
                 ("n_dimensions",             c_int),
                 ("points",                   POINTER(POINTER(c_double))),
@@ -209,3 +214,13 @@ libminc.general_inverse_transform_point.argtypes = [POINTER(GeneralTransform),
                                             c_double, c_double, c_double,
                                             POINTER(c_double), POINTER(c_double), POINTER(c_double)]
 libminc.delete_general_transform.argtypes = [POINTER(GeneralTransform)]
+
+libminc.transform_point.argtypes = [POINTER(Transform),
+                        c_double, c_double, c_double,
+                        POINTER(c_double), POINTER(c_double), POINTER(c_double)]
+
+libminc.transform_vector.argtypes = [POINTER(Transform),                                                c_double, c_double, c_double,
+                                     POINTER(c_double), POINTER(c_double), POINTER(c_double)]
+
+libminc.get_linear_transform_ptr.argtypes = [POINTER(GeneralTransform)]
+libminc.get_linear_transform_ptr.restype = POINTER(Transform)
