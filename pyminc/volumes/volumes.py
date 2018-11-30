@@ -256,7 +256,7 @@ class mincVolume(object):
                       start=start, count=count, separations=self.separations) 
 
         if self.dataLoaded:
-            slices = list(map(lambda x, y: slice(x, x+y), start, count))
+            slices = tuple(map(lambda x, y: slice(x, x+y), start, count))
             if dtype_to_get == "float" or dtype_to_get == "double":
                 a[...] = self.data[slices]
             else:
