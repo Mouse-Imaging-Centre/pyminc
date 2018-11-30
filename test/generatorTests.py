@@ -2,7 +2,7 @@ import unittest
 from pyminc.volumes.volumes import *
 from pyminc.volumes.factory import *
 from pyminc.volumes.libpyminc2 import *
-import numpy as N
+import numpy as np
 import os
 import subprocess
 import tempfile
@@ -179,48 +179,48 @@ class TestFromFile(unittest.TestCase):
     def testFromFileDataByte(self):
         """ensure that byte data is read correct with a precision of 8 decimals on a call to aveage()"""
         v = volumeFromFile(inputFile_byte)
-        a = N.average(v.data)
+        a = np.average(v.data)
         v.closeVolume()
         pipe = os.popen("mincstats -mean -quiet %s" % inputFile_byte, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertAlmostEqual(a, output, 8)
+        np.testing.assert_allclose(a, output, 8)
     def testFromFileDataShort(self):
         """ensure that short data is read correct with a precision of 8 decimals on a call to aveage()"""
         v = volumeFromFile(inputFile_short)
-        a = N.average(v.data)
+        a = np.average(v.data)
         v.closeVolume()
         pipe = os.popen("mincstats -mean -quiet %s" % inputFile_short, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertAlmostEqual(a, output, 8)
+        np.testing.assert_allclose(a, output, 8)
     def testFromFileDataInt(self):
         """ensure that int data is read correct with a precision of 8 decimals on a call to aveage()"""
         v = volumeFromFile(inputFile_int)
-        a = N.average(v.data)
+        a = np.average(v.data)
         v.closeVolume()
         pipe = os.popen("mincstats -mean -quiet %s" % inputFile_int, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertAlmostEqual(a, output, 8)
+        np.testing.assert_allclose(a, output, 8)
     def testFromFileDataFloat(self):
         """ensure that float data is read correct with a precision of 8 decimals on a call to aveage()"""
         v = volumeFromFile(inputFile_float)
-        a = N.average(v.data)
+        a = np.average(v.data)
         v.closeVolume()
         pipe = os.popen("mincstats -mean -quiet %s" % inputFile_float, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertAlmostEqual(a, output, 8)
+        np.testing.assert_allclose(a, output, 8)
     def testFromFileDataDouble(self):
         """ensure that double data is read correct with a precision of 8 decimals on a call to aveage()"""
         v = volumeFromFile(inputFile_double)
-        a = N.average(v.data)
+        a = np.average(v.data)
         v.closeVolume()
         pipe = os.popen("mincstats -mean -quiet %s" % inputFile_double, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertAlmostEqual(a, output, 8)
+        np.testing.assert_allclose(a, output, 8)
         
         
 class TestWriteFileDataTypes(unittest.TestCase):
@@ -553,7 +553,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
     ############################################################################
     def testWriteDataAsByte_vFD(self):
         """ensure that a volume created by volumeFromData as byte is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -566,7 +566,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "byte")
     def testWriteDataAsByte_vFD_content(self):
         """ensure that a volume created by volumeFromData as byte writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -580,7 +580,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsShort_vFD(self):
         """ensure that a volume created by volumeFromData as short is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -593,7 +593,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "short")
     def testWriteDataAsShort_vFD_content(self):
         """ensure that a volume created by volumeFromData as short writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -607,7 +607,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsInt_vFD(self):
         """ensure that a volume created by volumeFromData as int is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -620,7 +620,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "int")
     def testWriteDataAsInt_vFD_content(self):
         """ensure that a volume created by volumeFromData as int writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -634,7 +634,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsFloat_vFD(self):
         """ensure that a volume created by volumeFromData as float is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -647,7 +647,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "float")
     def testWriteDataAsFloat_vFD_content(self):
         """ensure that a volume created by volumeFromData as float writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -661,7 +661,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsDouble_vFD(self):
         """ensure that a volume created by volumeFromData as double is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -674,7 +674,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "double")
     def testWriteDataAsDouble_vFD_content(self):
         """ensure that a volume created by volumeFromData as double writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -688,7 +688,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsUByte_vFD(self):
         """ensure that a volume created by volumeFromData as unsigned byte is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -701,7 +701,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "ubyte")
     def testWriteDataAsUByte_vFD_content(self):
         """ensure that a volume created by volumeFromData as unsigned byte writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -715,7 +715,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsUShort_vFD(self):
         """ensure that a volume created by volumeFromData as unsigned short is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -728,7 +728,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "ushort")
     def testWriteDataAsUShort_vFD_content(self):
         """ensure that a volume created by volumeFromData as unsigned short writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -742,7 +742,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertAlmostEqual(output, data_block.mean(), 8)
     def testWriteDataAsUInt_vFD(self):
         """ensure that a volume created by volumeFromData as unsigned int is written out as such"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -755,7 +755,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(vol_in_data_type, "uint")
     def testWriteDataAsUInt_vFD_content(self):
         """ensure that a volume created by volumeFromData as unsigned int writes correct data"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -772,7 +772,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
     ############################################################################
     def testWriteDataFromNumpyByte(self):
         """ensure that a volume created by volumeFromData uses the dtype of the datablock by default"""
-        data_block = N.arange(24000, dtype="byte").reshape(20,30,40)
+        data_block = np.arange(24000, dtype="byte").reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -782,7 +782,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
         self.assertEqual(v.dtype, "byte")
     def testWriteDataFromNumpyChangeDtype(self):
         """ensure that a volume created by volumeFromData can overwrite the dtype if set explicitly"""
-        data_block = N.arange(24000, dtype="ushort").reshape(20,30,40)
+        data_block = np.arange(24000, dtype="ushort").reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -796,7 +796,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
     ############################################################################
     def testSettingImageCompleteFlag(self):
         """ensure that when writeFile() is called, the image:complete flag is set correctly"""
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -830,8 +830,8 @@ class TestCopyConstructor(unittest.TestCase):
         """copying with data=True flag should result in a copy of the data"""
         v = volumeFromFile(inputFile_ushort)
         n = volumeFromInstance(v, outputFilename, data=True)
-        va = N.average(v.data)
-        na = N.average(n.data)
+        va = np.average(v.data)
+        na = np.average(n.data)
         v.closeVolume()
         n.closeVolume()
         self.assertEqual(va, na)
@@ -841,8 +841,8 @@ class TestCopyConstructor(unittest.TestCase):
         n = volumeFromInstance(v, outputFilename, data=True)
         # set data to some random value
         n.data[:,:,:] = 10
-        va = N.average(v.data)
-        na = N.average(n.data)
+        va = np.average(v.data)
+        na = np.average(n.data)
         v.closeVolume()
         n.closeVolume()
         self.assertNotEqual(va, na)
@@ -876,11 +876,11 @@ class TestReadWrite(unittest.TestCase):
         o = volumeFromInstance(v, outputFilename, data=True)
         #print(o.data)
         o.data = v.data * 5
-        oa = N.average(o.data)
+        oa = np.average(o.data)
         v.closeVolume()
         o.writeFile()
         o_back_in = volumeFromFile(outputFilename)
-        o_back_in_a = N.average(o_back_in.data)
+        o_back_in_a = np.average(o_back_in.data)
         o_back_in.closeVolume()
         self.assertAlmostEqual(o_back_in_a, oa, 8)
 
@@ -907,8 +907,8 @@ class TestHyperslabs(unittest.TestCase):
         v = volumeFromFile(inputFile_ushort)
         sliceFromData = v.data[10,:,:]
         hyperslab = v.getHyperslab((10,0,0), (1, v.sizes[1], v.sizes[2]))
-        sa = N.average(sliceFromData)
-        ha = N.average(hyperslab)
+        sa = np.average(sliceFromData)
+        ha = np.average(hyperslab)
         v.closeVolume()
         self.assertEqual(sa, ha)
     def testHyperslabInfo(self):
@@ -930,7 +930,7 @@ class TestHyperslabs(unittest.TestCase):
         v2 = volumeFromFile(outputFilename)
         h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
         v2.closeVolume()
-        self.assertAlmostEqual(N.average(hyperslab), N.average(h2), 8)
+        self.assertAlmostEqual(np.average(hyperslab), np.average(h2), 8)
     def testHyperslabArray(self):
         """hyperslab should be reinsertable into volume"""
         v = volumeFromFile(inputFile_ushort)
@@ -942,7 +942,7 @@ class TestHyperslabs(unittest.TestCase):
         v2 = volumeFromFile(outputFilename)
         h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
         v2.closeVolume()
-        self.assertAlmostEqual(N.average(hyperslab), N.average(h2), 8)
+        self.assertAlmostEqual(np.average(hyperslab), np.average(h2), 8)
 class testVectorFiles(unittest.TestCase):
     """test reading and writing of vector files"""
     def testVectorRead(self):
@@ -1148,7 +1148,7 @@ class testDirectionCosines(unittest.TestCase):
         z0 = 0.1784390237
         z1 = 0.4534233971
         z2 = 0.8564847453
-        data_block = N.arange(24000).reshape(20,30,40)
+        data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
