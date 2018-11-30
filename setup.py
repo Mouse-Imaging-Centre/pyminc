@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pyminc',
-      version = '0.51',
+      version = '0.52',
       description = "Python interface to libminc",
       url = "https://github.com/Mouse-Imaging-Centre/pyminc",
       author = "Jason Lerch",
@@ -10,5 +10,6 @@ setup(name='pyminc',
       packages = find_packages(),
       install_requires = ["numpy"],
       scripts = ["scripts/sva2mnc.py", "scripts/pyminc_test2.py"],
+      tests_require = ["pytest"],
       test_suite="test",
       )

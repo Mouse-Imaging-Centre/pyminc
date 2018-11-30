@@ -1,3 +1,11 @@
+New in version 0.52
+===================
+* added functionality for accessing linear transform component of a general transform,
+  and associated small bugfixes (added by John Sled)
+* fix some failing/broken tests
+* one instance of indexing numpy array with a list was changed to use a tuple due to numpy API
+  deprecation (see e.g. MICe-lab/#18)
+
 New in version 0.51
 ===================
 * turns out that for memory/time efficiency, you really want to load a transformation grid into memory
