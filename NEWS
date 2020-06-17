@@ -1,3 +1,8 @@
+New in version 0.53
+===================
+* drop support for Python 2 and Python3 < 3.5
+* don't create a 'test' package in site-packages/
+
 New in version 0.52
 ===================
 * added functionality for accessing linear transform component of a general transform,
