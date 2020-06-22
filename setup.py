@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='pyminc',
-      version = '0.53',
+      version = '0.53.1',
       description = "Python interface to libminc",
       url = "https://github.com/Mouse-Imaging-Centre/pyminc",
       author = "Jason Lerch",
