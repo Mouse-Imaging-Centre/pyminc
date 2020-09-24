@@ -876,13 +876,11 @@ class TestReadWrite(unittest.TestCase):
         o = volumeFromInstance(v, outputFilename, data=True)
         #print(o.data)
         o.data = v.data * 5
-        oa = np.average(o.data)
         v.closeVolume()
         o.writeFile()
         o_back_in = volumeFromFile(outputFilename)
-        o_back_in_a = np.average(o_back_in.data)
-        o_back_in.closeVolume()
-        self.assertAlmostEqual(o_back_in_a, oa, 8)
+        np.testing.assert_allclose(o.data, o_back_in.data)
+        o_back_in.closeVolume()  # after this o.data is an array of zeros!
 
 class TestFromDescription(unittest.TestCase):
     """testing creation of brand new volumes"""
@@ -930,7 +928,7 @@ class TestHyperslabs(unittest.TestCase):
         v2 = volumeFromFile(outputFilename)
         h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
         v2.closeVolume()
-        self.assertAlmostEqual(np.average(hyperslab), np.average(h2), 8)
+        np.testing.assert_allclose(hyperslab, h2)
     def testHyperslabArray(self):
         """hyperslab should be reinsertable into volume"""
         v = volumeFromFile(inputFile_ushort)
@@ -942,7 +940,7 @@ class TestHyperslabs(unittest.TestCase):
         v2 = volumeFromFile(outputFilename)
         h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
         v2.closeVolume()
-        self.assertAlmostEqual(np.average(hyperslab), np.average(h2), 8)
+        np.testing.assert_allclose(hyperslab, h2)  #, 8)
 class testVectorFiles(unittest.TestCase):
     """test reading and writing of vector files"""
     def testVectorRead(self):
