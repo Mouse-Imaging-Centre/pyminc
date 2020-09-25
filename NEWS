@@ -1,3 +1,16 @@
+New in version 0.53.3
+=====================
+* bugfix where valid range would be set incorrectly for label files (pyminc/pull/31)
+
+New in version 0.53.2
+=====================
+* solve some test flakiness by using a more appropriate assert (pyminc/issues/34)
+  - the exact mechanism causing the original flakiness is still unknown
+
+New in version 0.53.1
+=====================
+* don't install `test/` dir into site-packages directory
+
 New in version 0.53
 ===================
 * drop support for Python 2 and Python3 < 3.5
