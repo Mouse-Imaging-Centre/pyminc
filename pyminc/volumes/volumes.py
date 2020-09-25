@@ -439,8 +439,8 @@ class mincVolume(object):
         if self.labels:
             if max > vmax or min < vmin:
                 raise ValueError("label volume found where max or min label exceeds max or min of volume type")
-            vmax = max
-            vmin = min
+            max = vmax
+            min = vmin
         r = libminc.miset_volume_range(self.volPointer, max, min)
         testMincReturn(r)
         r = libminc.miset_volume_valid_range(self.volPointer, vmax, vmin)
