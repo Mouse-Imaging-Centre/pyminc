@@ -86,6 +86,9 @@ MI_TYPE_FCOMPLEX = c_int(1002) # < 32-bit floating point complex
 MI_TYPE_DCOMPLEX = c_int(1003) # < 64-bit floating point complex 
 MI_TYPE_UNKNOWN  = c_int(-1)   # < when the type is a record 
 
+MI_COMPRESS_NONE = c_int(0)
+MI_COMPRESS_ZLIB = c_int(1)
+
 # mitype_t is an enum in libminc (libsrc2/minc2_structs.h) 
 # since it can be negative as well (-1 for MI_TYPE_UNKNOWN) 
 # this reverts to c_int
@@ -93,6 +96,7 @@ mitype_t = c_int
 
 # opaque minc structs can be represented as pointers
 mihandle = c_void_p
+mivolumeprops = c_void_p
 midimhandle = c_void_p
 
 # some type information
@@ -166,7 +170,7 @@ libminc.miget_dimension_starts.argtypes = [dimensions, c_int, misize_t,
 #                                               misize_t_sizes, POINTER(c_double)]
 libminc.micopy_dimension.argtypes = [c_void_p, POINTER(c_void_p)]
 libminc.micreate_volume.argtypes = [c_stringy, c_int, dimensions, c_int, c_int,
-                                    c_void_p, POINTER(mihandle)]
+                                    mivolumeprops, POINTER(mihandle)]
 libminc.micreate_volume_image.argtypes = [mihandle]
 libminc.miset_volume_valid_range.argtypes = [mihandle, c_double, c_double]
 libminc.miget_volume_valid_range.argtypes = [mihandle, POINTER(c_double), POINTER(c_double)]
@@ -183,6 +187,10 @@ libminc.mifree_dimension_handle.argtypes = [c_void_p]
 libminc.micreate_dimension.argtypes = [c_stringy, c_int, c_int, misize_t, POINTER(c_void_p)]
 libminc.miset_dimension_separation.argtypes = [c_void_p, c_double]
 libminc.miset_dimension_start.argtypes = [c_void_p, c_double]
+libminc.minew_volume_props.argtypes = [POINTER(mivolumeprops)]
+libminc.miget_volume_props.argtypes = [mihandle, POINTER(mivolumeprops)]
+libminc.miset_props_compression_type.argtypes = [mivolumeprops, POINTER(c_int)]
+libminc.miget_props_compression_type.argtypes = [mivolumeprops, POINTER(c_int)]
 
 #adding history to minc files
 libminc.miadd_history_attr.argtypes = [mihandle, c_uint, c_void_p]

@@ -82,6 +82,7 @@ def transform_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, us
 class mincVolume(object):
     def __init__(self, filename=None, dtype=None, readonly=True, labels=False):
         self.volPointer = mihandle() # holds the pointer to the mihandle
+        self.propPointer = mivolumeprops() #holds the pointer to the mivolumeprops
         self.dims = dimensions()     # holds the actual pointers to dimensions
         self.ndims = 0               # number of dimensions in this volume
         self.ndims_misize_t = 0      # same number, but in different format
@@ -101,7 +102,6 @@ class mincVolume(object):
         self._y_direction_cosines = None
         self._z_direction_cosines = None
         self._data_written_to_file = False
-            
 
     def numpy_type_to_string(self, dtype_in_numpy_form):
         # if the dtype is not found, return "unknown"
