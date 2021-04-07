@@ -11,6 +11,6 @@ setup(name='pyminc',
       python_requires = ">=3.5",
       install_requires = ["numpy"],
       scripts = ["scripts/sva2mnc.py", "scripts/pyminc_test2.py"],
-      tests_require = ["pytest"],
+      tests_require = ["pytest", "parameterized"],
       test_suite="test",
       )

@@ -1,11 +1,14 @@
-import unittest
 from pyminc.volumes.volumes import *
 from pyminc.volumes.factory import *
 from pyminc.volumes.libpyminc2 import *
+
 import numpy as np
 import os
 import subprocess
 import tempfile
+import unittest
+
+from parameterized import parameterized
 
 outputFilename = tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc").name
 emptyFilename = tempfile.NamedTemporaryFile(prefix="test-empty-", suffix=".mnc").name
@@ -56,7 +59,18 @@ subprocess.check_call(["param2xfm", "-center", '2.21', '-3.765', '4.09', "-trans
 subprocess.check_call(["param2xfm", "-center", '-23.98', '0.46', '9.5', "-translation", '0.0', '-46', '89.3', "-scales", '10', '7.33', '84', outputXfmFilename2])
 subprocess.check_call(["xfmconcat", outputXfmFilename1, outputXfmFilename2, outputXfmFilename3])
 
-                       
+
+input_files_and_dtypes = [("byte", inputFile_byte),
+                          ("short", inputFile_short),
+                          ("int", inputFile_int),
+                          ("float", inputFile_float),
+                          ("double", inputFile_double),
+                          ("ubyte", inputFile_ubyte),
+                          ("ushort", inputFile_ushort),
+                          ("uint", inputFile_uint)]
+
+dtypes = [dtype for dtype, _ in input_files_and_dtypes]
+input_files = [f for _, f in input_files_and_dtypes]
 
 def tearDownModule():
     os.remove(inputFile_byte)
@@ -79,688 +93,124 @@ class TestFromFile(unittest.TestCase):
     def testFromFileError(self):
         """attempting to load a garbage file should raise exception"""
         self.assertRaises(mincException, volumeFromFile, "garbage.mnc")
-    def testFromFileDataTypeByte(self):
-        """ensure byte data is read as double by default"""
-        v = volumeFromFile(inputFile_byte)
+
+    @parameterized.expand(input_files)
+    def testDataTypeFromFileIsDouble(self, input_file):
+        """ensure data is read as double by default"""
+        v = volumeFromFile(input_file)
         dt = v.data.dtype
         v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeShort(self):
-        """ensure short data is read as double by default"""
-        v = volumeFromFile(inputFile_short)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeInt(self):
-        """ensure int data is read as double by default"""
-        v = volumeFromFile(inputFile_int)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeFloat(self):
-        """ensure float data is read as double by default"""
-        v = volumeFromFile(inputFile_float)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeDouble(self):
-        """ensure double data is read as double"""
-        v = volumeFromFile(inputFile_double)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeUByte(self):
-        """ensure unsigned byte data is read as double by default"""
-        v = volumeFromFile(inputFile_ubyte)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeUShort(self):
-        """ensure unsigned short data is read as double by default"""
-        v = volumeFromFile(inputFile_ushort)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-    def testFromFileDataTypeUInt(self):
-        """ensure unsigned int data is read as double by default"""
-        v = volumeFromFile(inputFile_uint)
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, 'float64')
-        
-    def testFromFileDataTypeSetToByte(self):
+        assert dt == 'float64'
+
+    @parameterized.expand([("byte", "int8"),
+                           ("short", "int16"),
+                           ("int", "int32"),
+                           ("float", "float32"),
+                           ("double", "float64"),
+                           ("ubyte", "uint8"),
+                           ("ushort", "uint16"),
+                           ("uint", "uint32")])
+    def testFromFileDataTypeSetToDtype(self, in_dtype, out_dtype):
         """ensure that datatype can be set to byte"""
-        v = volumeFromFile(inputFile_short, dtype="byte")
+        v = volumeFromFile(inputFile_short, dtype=in_dtype)
         dt = v.data.dtype
         v.closeVolume()
-        self.assertEqual(dt, "int8")
-    def testFromFileDataTypeSetToShort(self):
-        """ensure that datatype can be set to short"""
-        v = volumeFromFile(inputFile_byte, dtype="short")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "int16")
-    def testFromFileDataTypeSetToInt(self):
-        """ensure that datatype can be set to int"""
-        v = volumeFromFile(inputFile_byte, dtype="int")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "int32")
-    def testFromFileDataTypeSetToFloat(self):
-        """ensure that datatype can be set to float"""
-        v = volumeFromFile(inputFile_byte, dtype="float")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "float32")
-    def testFromFileDataTypeSetToDouble(self):
-        """ensure that datatype can be set to double"""
-        v = volumeFromFile(inputFile_byte, dtype="double")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "float64")
-    def testFromFileDataTypeSetToUByte(self):
-        """ensure that datatype can be set to unsigned byte"""
-        v = volumeFromFile(inputFile_byte, dtype="ubyte")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "uint8")
-    def testFromFileDataTypeSetToUShort(self):
-        """ensure that datatype can be set to unsigned short"""
-        v = volumeFromFile(inputFile_byte, dtype="ushort")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "uint16")
-    def testFromFileDataTypeSetToUInt(self):
-        """ensure that datatype can be set to unsigned int"""
-        v = volumeFromFile(inputFile_byte, dtype="uint")
-        dt = v.data.dtype
-        v.closeVolume()
-        self.assertEqual(dt, "uint32")
-    def testFromFileDataByte(self):
-        """ensure that byte data is read correct with a precision of 8 decimals on a call to aveage()"""
-        v = volumeFromFile(inputFile_byte)
+        assert dt == out_dtype
+
+    @parameterized.expand(input_files)
+    def testMeanFromFile(self, input_file):
+        """ensure that data is read correct with a precision of 8 decimals on a call to average()"""
+        v = volumeFromFile(input_file)
         a = np.average(v.data)
         v.closeVolume()
-        pipe = os.popen("mincstats -mean -quiet %s" % inputFile_byte, "r")
+        pipe = os.popen("mincstats -mean -quiet %s" % input_file, "r")
         output = float(pipe.read())
         pipe.close()
         np.testing.assert_allclose(a, output, 8)
-    def testFromFileDataShort(self):
-        """ensure that short data is read correct with a precision of 8 decimals on a call to aveage()"""
-        v = volumeFromFile(inputFile_short)
-        a = np.average(v.data)
-        v.closeVolume()
-        pipe = os.popen("mincstats -mean -quiet %s" % inputFile_short, "r")
-        output = float(pipe.read())
-        pipe.close()
-        np.testing.assert_allclose(a, output, 8)
-    def testFromFileDataInt(self):
-        """ensure that int data is read correct with a precision of 8 decimals on a call to aveage()"""
-        v = volumeFromFile(inputFile_int)
-        a = np.average(v.data)
-        v.closeVolume()
-        pipe = os.popen("mincstats -mean -quiet %s" % inputFile_int, "r")
-        output = float(pipe.read())
-        pipe.close()
-        np.testing.assert_allclose(a, output, 8)
-    def testFromFileDataFloat(self):
-        """ensure that float data is read correct with a precision of 8 decimals on a call to aveage()"""
-        v = volumeFromFile(inputFile_float)
-        a = np.average(v.data)
-        v.closeVolume()
-        pipe = os.popen("mincstats -mean -quiet %s" % inputFile_float, "r")
-        output = float(pipe.read())
-        pipe.close()
-        np.testing.assert_allclose(a, output, 8)
-    def testFromFileDataDouble(self):
-        """ensure that double data is read correct with a precision of 8 decimals on a call to aveage()"""
-        v = volumeFromFile(inputFile_double)
-        a = np.average(v.data)
-        v.closeVolume()
-        pipe = os.popen("mincstats -mean -quiet %s" % inputFile_double, "r")
-        output = float(pipe.read())
-        pipe.close()
-        np.testing.assert_allclose(a, output, 8)
-        
+
         
 class TestWriteFileDataTypes(unittest.TestCase):
     ############################################################################
     # volumeFromDescription
     ############################################################################
-    def testWriteDataAsByte(self):
+    @parameterized.expand(dtypes)
+    def testWriteDataAsDtype(self, dtype):
         """ensure that a volume created by volumeFromDescription as byte is written out as such"""
         v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
                                   (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="byte")
+                                  volumeType=dtype)
         v.data[::] = 5
         v.writeFile()
         # retrieve data type from written file:
         vol_in = volumeFromFile(newFilename)
         vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "byte")
-    def testWriteDataAsShort(self):
-        """ensure that a volume created by volumeFromDescription as short is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="short")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "short")
-    def testWriteDataAsInt(self):
-        """ensure that a volume created by volumeFromDescription as int is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="int")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "int")
-    def testWriteDataAsFloat(self):
-        """ensure that a volume created by volumeFromDescription as float is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="float")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "float")
-    def testWriteDataAsDouble(self):
-        """ensure that a volume created by volumeFromDescription as double is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="double")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "double")
-    def testWriteDataAsUByte(self):
-        """ensure that a volume created by volumeFromDescription as unsigned byte is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="ubyte")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ubyte")
-    def testWriteDataAsUShort(self):
-        """ensure that a volume created by volumeFromDescription as unsigned short is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="ushort")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ushort")
-    def testWriteDataAsUInt(self):
-        """ensure that a volume created by volumeFromDescription as unsigned int is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
-                                  (10,20,30), (-10,10,20), (0.5,0.5,0.5),
-                                  volumeType="uint")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(newFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "uint")
+        assert vol_in_data_type == dtype
+
     ############################################################################
     # volumeFromInstance
     ############################################################################
-    def testWriteDataAsByte_vFI(self):
+    @parameterized.expand(dtypes)
+    def testWriteDataAsDtype_vFI(self, dtype):
         """ensure that a volume created by volumeFromInstance as byte is written out as such"""
         in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="byte")
+        v = volumeFromInstance(in_v, outputFilename, volumeType=dtype)
         v.data[::] = 5
         v.writeFile()
         # retrieve data type from written file:
         vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "byte")
-    def testWriteDataAsShort_vFI(self):
-        """ensure that a volume created by volumeFromInstance as short is written out as such"""
-        in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="short")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "short")
-    def testWriteDataAsInt_vFI(self):
-        """ensure that a volume created by volumeFromInstance as int is written out as such"""
-        in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="int")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "int")
-    def testWriteDataAsFloat_vFI(self):
-        """ensure that a volume created by volumeFromInstance as float is written out as such"""
-        in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="float")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "float")
-    def testWriteDataAsDouble_vFI(self):
-        """ensure that a volume created by volumeFromInstance as double is written out as such"""
-        in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="double")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "double")
-    def testWriteDataAsUByte_vFI(self):
-        """ensure that a volume created by volumeFromInstance as unsigned byte is written out as such"""
-        in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="ubyte")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ubyte")
-    def testWriteDataAsUShort_vFI(self):
-        """ensure that a volume created by volumeFromInstance as unsigned short is written out as such"""
-        in_v = volumeFromFile(inputFile_byte)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="ushort")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ushort")
-    def testWriteDataAsUInt_vFI(self):
-        """ensure that a volume created by volumeFromInstance as unsigned int is written out as such"""
-        in_v = volumeFromFile(inputFile_short)
-        v = volumeFromInstance(in_v, outputFilename, volumeType="uint")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "uint")
+        assert vol_in.volumeType == dtype
+
     ############################################################################
     # volumeLikeFile
     ############################################################################
-    def testWriteDataAsByte_vLF_base(self):
+    @parameterized.expand(input_files_and_dtypes)
+    def testWriteDataAsDtype_vLF_base(self, dtype, input_file):
         """ensure that a volume created by volumeLikeFile has the same type as its input (byte)"""
-        v = volumeLikeFile(inputFile_byte, outputFilename)
+        v = volumeLikeFile(input_file, outputFilename)
         v.data[::] = 5
         v.writeFile()
         # retrieve data type from written file:
         vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "byte")
-    def testWriteDataAsShort_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (short)"""
-        v = volumeLikeFile(inputFile_short, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "short")
-    def testWriteDataAsInt_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (int)"""
-        v = volumeLikeFile(inputFile_int, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "int")
-    def testWriteDataAsFloat_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (float)"""
-        v = volumeLikeFile(inputFile_float, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "float")
-    def testWriteDataAsDouble_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (double)"""
-        v = volumeLikeFile(inputFile_double, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "double")
-    def testWriteDataAsUByte_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (ubyte)"""
-        v = volumeLikeFile(inputFile_ubyte, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ubyte")
-    def testWriteDataAsUShort_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (ushort)"""
-        v = volumeLikeFile(inputFile_ushort, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ushort")
-    def testWriteDataAsUint_vLF_base(self):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (uint)"""
-        v = volumeLikeFile(inputFile_uint, outputFilename)
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "uint")
+        assert vol_in.volumeType == dtype
+
     #########################
     # changing the volumeType
     #########################
-    def testWriteDataAsByte_vLF(self):
+    @parameterized.expand(input_files_and_dtypes)
+    def testWriteDataAsDtype_vLF(self, dtype, input_file):
         """ensure that a volume created by volumeLikeFile as byte is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_ushort, outputFilename, volumeType="byte")
+        v = volumeLikeFile(input_file, outputFilename, volumeType=dtype)
         v.data[::] = 5
         v.writeFile()
         # retrieve data type from written file:
         vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "byte")
-    def testWriteDataAsShort_vLF(self):
-        """ensure that a volume created by volumeLikeFile as short is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_ushort, outputFilename, volumeType="short")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "short")
-    def testWriteDataAsInt_vLF(self):
-        """ensure that a volume created by volumeLikeFile as int is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_ushort, outputFilename, volumeType="int")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "int")
-    def testWriteDataAsFloat_vLF(self):
-        """ensure that a volume created by volumeLikeFile as float is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_ushort, outputFilename, volumeType="float")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "float")
-    def testWriteDataAsDouble_vLF(self):
-        """ensure that a volume created by volumeLikeFile as double is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_ushort, outputFilename, volumeType="double")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "double")
-    def testWriteDataAsUByte_vLF(self):
-        """ensure that a volume created by volumeLikeFile as ubyte is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_double, outputFilename, volumeType="ubyte")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ubyte")
-    def testWriteDataAsUShort_vLF(self):
-        """ensure that a volume created by volumeLikeFile as ushort is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_float, outputFilename, volumeType="ushort")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ushort")
-    def testWriteDataAsUInt_vLF(self):
-        """ensure that a volume created by volumeLikeFile as uint is written out as such (input file has different volumeType)"""
-        v = volumeLikeFile(inputFile_byte, outputFilename, volumeType="uint")
-        v.data[::] = 5
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "uint")
+        assert vol_in.volumeType == dtype
+
     ############################################################################
     # volumeFromData
     ############################################################################
-    def testWriteDataAsByte_vFD(self):
+    @parameterized.expand(dtypes)
+    def testWriteDataAsDtype_vFD(self, dtype):
         """ensure that a volume created by volumeFromData as byte is written out as such"""
         data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
                            steps=(1, 1, 1),
-                           volumeType="byte")
+                           volumeType=dtype)
         v.writeFile()
         # retrieve data type from written file:
         vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "byte")
-    def testWriteDataAsByte_vFD_content(self):
+        assert vol_in.volumeType == dtype
+    @parameterized.expand(dtypes)
+    def testWriteDataAsDtype_vFD_content(self, dtype):
         """ensure that a volume created by volumeFromData as byte writes correct data"""
         data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
                            steps=(1, 1, 1),
-                           volumeType="byte")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsShort_vFD(self):
-        """ensure that a volume created by volumeFromData as short is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="short")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "short")
-    def testWriteDataAsShort_vFD_content(self):
-        """ensure that a volume created by volumeFromData as short writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="short")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsInt_vFD(self):
-        """ensure that a volume created by volumeFromData as int is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="int")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "int")
-    def testWriteDataAsInt_vFD_content(self):
-        """ensure that a volume created by volumeFromData as int writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="int")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsFloat_vFD(self):
-        """ensure that a volume created by volumeFromData as float is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="float")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "float")
-    def testWriteDataAsFloat_vFD_content(self):
-        """ensure that a volume created by volumeFromData as float writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="float")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsDouble_vFD(self):
-        """ensure that a volume created by volumeFromData as double is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="double")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "double")
-    def testWriteDataAsDouble_vFD_content(self):
-        """ensure that a volume created by volumeFromData as double writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="double")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsUByte_vFD(self):
-        """ensure that a volume created by volumeFromData as unsigned byte is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="ubyte")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ubyte")
-    def testWriteDataAsUByte_vFD_content(self):
-        """ensure that a volume created by volumeFromData as unsigned byte writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="ubyte")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsUShort_vFD(self):
-        """ensure that a volume created by volumeFromData as unsigned short is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="ushort")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "ushort")
-    def testWriteDataAsUShort_vFD_content(self):
-        """ensure that a volume created by volumeFromData as unsigned short writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="ushort")
-        v.writeFile()
-        # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
-    def testWriteDataAsUInt_vFD(self):
-        """ensure that a volume created by volumeFromData as unsigned int is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="uint")
-        v.writeFile()
-        # retrieve data type from written file:
-        vol_in = volumeFromFile(outputFilename)
-        vol_in_data_type = vol_in.volumeType
-        self.assertEqual(vol_in_data_type, "uint")
-    def testWriteDataAsUInt_vFD_content(self):
-        """ensure that a volume created by volumeFromData as unsigned int writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
-        v = volumeFromData(outputFilename, data_block,
-                           dimnames=("xspace", "yspace", "zspace"),
-                           starts=(0, 0, 0),
-                           steps=(1, 1, 1),
-                           volumeType="uint")
+                           volumeType=dtype)
         v.writeFile()
         # retrieve mean of data written to disk:
         pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
