@@ -6,7 +6,9 @@ import numpy as np
 import os
 import subprocess
 import tempfile
-import unittest
+
+import pytest
+from pytest import approx
 
 from parameterized import parameterized
 
@@ -43,11 +45,11 @@ subprocess.check_call(['rawtominc', inputFile_uint, '-ounsigned', '-oint', '-inp
 inputVector = tempfile.NamedTemporaryFile(prefix="test-vector-", suffix=".mnc").name
 subprocess.check_call(['rawtominc', inputVector, '-input', '/dev/urandom', '3', '100', '150', '125',
                        '-dimorder', 'vector_dimension,xspace,yspace,zspace'])
-                       
-                       
+
+
 input3DdirectionCosines = tempfile.NamedTemporaryFile(prefix="test-3d-direction-cosines", suffix=".mnc").name
 subprocess.check_call(['rawtominc', input3DdirectionCosines, '-input', '/dev/urandom', '100', '150', '125',
-                       '-xdircos',  '0.9305326623',   '0.1308213523', '0.34202943789', 
+                       '-xdircos',  '0.9305326623',   '0.1308213523', '0.34202943789',
                        '-ydircos', '-0.1958356912',  '0.96692346178', '0.16316734231',
                        '-zdircos', '-9.3093890238', '-0.21882376893', '0.92542348732'])
 
@@ -88,11 +90,12 @@ def tearDownModule():
     os.remove(outputXfmFilename2)
     os.remove(outputXfmFilename3)
 
-class TestFromFile(unittest.TestCase):
+class TestFromFile:
     """test the volumeFromFile generator"""
     def testFromFileError(self):
         """attempting to load a garbage file should raise exception"""
-        self.assertRaises(mincException, volumeFromFile, "garbage.mnc")
+        with pytest.raises(mincException):
+             volumeFromFile("garbage.mnc")
 
     @parameterized.expand(input_files)
     def testDataTypeFromFileIsDouble(self, input_file):
@@ -128,15 +131,15 @@ class TestFromFile(unittest.TestCase):
         pipe.close()
         np.testing.assert_allclose(a, output, 8)
 
-        
-class TestWriteFileDataTypes(unittest.TestCase):
+
+class TestWriteFileDataTypes:
     ############################################################################
     # volumeFromDescription
     ############################################################################
     @parameterized.expand(dtypes)
     def testWriteDataAsDtype(self, dtype):
         """ensure that a volume created by volumeFromDescription as byte is written out as such"""
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
+        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"),
                                   (10,20,30), (-10,10,20), (0.5,0.5,0.5),
                                   volumeType=dtype)
         v.data[::] = 5
@@ -216,7 +219,19 @@ class TestWriteFileDataTypes(unittest.TestCase):
         pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertAlmostEqual(output, data_block.mean(), 8)
+        assert output == approx(data_block.mean())
+        #v_in = volumeFromFile(outputFilename)
+        #self.assertAlmostEqual(data_block, v_in.data)  # fails!!!
+
+    #def testWriteNonContiguousArray(self):
+    #    data_block = np.arange(24000).reshape(20, 30, 40).T
+    #    v = volumeFromData(outputFilename, data_block,
+    #                       dimnames=("xspace", "yspace", "zspace"),
+    #                       starts = (0, 0, 0), steps = (0.04, 0.04, 0.04), volumeType="uint")
+    #    v.writeFile()
+    #    vol_in = volumeFromFile(outputFilename)
+    #    self.assertAlmostEqual(data_block, vol_in.data)
+
     ############################################################################
     # using volumeFromData specifying the dtype from a numpy array
     ############################################################################
@@ -229,7 +244,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
                            steps=(1, 1, 1),
                            volumeType="ushort")
         v.writeFile()
-        self.assertEqual(v.dtype, "byte")
+        assert v.dtype == "byte"
     def testWriteDataFromNumpyChangeDtype(self):
         """ensure that a volume created by volumeFromData can overwrite the dtype if set explicitly"""
         data_block = np.arange(24000, dtype="ushort").reshape(20,30,40)
@@ -240,7 +255,7 @@ class TestWriteFileDataTypes(unittest.TestCase):
                            volumeType="ushort",
                            dtype="float")
         v.writeFile()
-        self.assertEqual(v.dtype, "float")
+        assert v.dtype == "float"
     ############################################################################
     # writeFile() sets the image:complete flag
     ############################################################################
@@ -256,9 +271,9 @@ class TestWriteFileDataTypes(unittest.TestCase):
         pipe = os.popen("minccomplete %s" % outputFilename, "r")
         output = float(pipe.read())
         pipe.close()
-        self.assertEqual(output, 0.0)
-    
-class TestCopyConstructor(unittest.TestCase):
+        assert output == approx(0.0)
+
+class TestCopyConstructor:
     def testCopyConstructorDimensions(self):
         """dimensions should be the same in copied volume"""
         v = volumeFromFile(inputFile_ushort)
@@ -267,7 +282,7 @@ class TestCopyConstructor(unittest.TestCase):
         vs = v.sizes[0:3]
         n.closeVolume()
         v.closeVolume()
-        self.assertEqual(ns, vs)
+        assert ns == vs
     def testCopyWithoutData(self):
         """copying without data=True flag should result in array of zeros"""
         v = volumeFromFile(inputFile_ushort)
@@ -275,7 +290,7 @@ class TestCopyConstructor(unittest.TestCase):
         m = n.data.max()
         v.closeVolume()
         n.closeVolume()
-        self.assertEqual(m, 0)
+        assert m == 0
     def testCopyWithData(self):
         """copying with data=True flag should result in a copy of the data"""
         v = volumeFromFile(inputFile_ushort)
@@ -284,7 +299,7 @@ class TestCopyConstructor(unittest.TestCase):
         na = np.average(n.data)
         v.closeVolume()
         n.closeVolume()
-        self.assertEqual(va, na)
+        assert va == na
     def testCopyWithData2(self):
         """ensure that data is copied and not referenced"""
         v = volumeFromFile(inputFile_ushort)
@@ -295,30 +310,32 @@ class TestCopyConstructor(unittest.TestCase):
         na = np.average(n.data)
         v.closeVolume()
         n.closeVolume()
-        self.assertNotEqual(va, na)
+        assert va != na
     def testEmptyFile(self):
         """ensure that empty volume is not written to disk"""
         v = volumeFromFile(inputFile_ushort)
         n = volumeFromInstance(v, emptyFilename)
         v.closeVolume()
         n.closeVolume()
-        self.assertRaises(OSError, os.stat, emptyFilename)
-        
-        
-class TestEmptyConstructor(unittest.TestCase):
+        with pytest.raises(OSError):
+            os.stat(emptyFilename)
+
+
+class TestEmptyConstructor:
     """tests for when no generator was used"""
     def testErrorOnDataAccess(self):
         """ensure error is raised on data access"""
         v = mincVolume(inputFile_ushort)
-        self.assertRaises(NoDataException, v.getdata)
+        with pytest.raises(NoDataException):
+            v.getdata()
     def testLoadData(self):
         """data should be accessible once openFile is called"""
         v = mincVolume(inputFile_ushort)
         v.openFile()
-        self.assertEqual(v.data.dtype, 'float64')
+        assert v.data.dtype == 'float64'
         v.closeVolume()
-        
-class TestReadWrite(unittest.TestCase):
+
+class TestReadWrite:
     """test the read-write cycle"""
     def testReadWrite(self):
         """ensure that data can be read and written correctly"""
@@ -332,7 +349,7 @@ class TestReadWrite(unittest.TestCase):
         np.testing.assert_allclose(o.data, o_back_in.data)
         o_back_in.closeVolume()  # after this o.data is an array of zeros!
 
-class TestFromDescription(unittest.TestCase):
+class TestFromDescription:
     """testing creation of brand new volumes"""
     def testCreateVolume(self):
         """test whether new volume can be created"""
@@ -345,10 +362,10 @@ class TestFromDescription(unittest.TestCase):
         o = volumeFromFile(newFilename)
         o_mean = o.data.mean()
         o.closeVolume()
-        self.assertAlmostEqual(v_mean, o_mean, 8)
+        assert o_mean == approx(v_mean)
 
 
-class TestHyperslabs(unittest.TestCase):
+class TestHyperslabs:
     """test getting and setting of hyperslabs"""
     def testGetHyperslab(self):
         """hyperslab should be same as slice from data array"""
@@ -358,7 +375,7 @@ class TestHyperslabs(unittest.TestCase):
         sa = np.average(sliceFromData)
         ha = np.average(hyperslab)
         v.closeVolume()
-        self.assertEqual(sa, ha)
+        assert sa == approx(ha)
     def testHyperslabInfo(self):
         """make sure that hyperslabs store enough info about themselves"""
         v = volumeFromFile(inputFile_ushort)
@@ -366,7 +383,7 @@ class TestHyperslabs(unittest.TestCase):
         count = (1, v.sizes[1], v.sizes[2])
         hyperslab = v.getHyperslab(start, count)
         v.closeVolume()
-        self.assertEqual(hyperslab.start[1], start[1])
+        assert hyperslab.start[1] == start[1]
     def testSetHyperslab(self):
         """setting hyperslab should change underlying volume"""
         v = volumeFromFile(inputFile_ushort)
@@ -391,20 +408,21 @@ class TestHyperslabs(unittest.TestCase):
         h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
         v2.closeVolume()
         np.testing.assert_allclose(hyperslab, h2)  #, 8)
-class testVectorFiles(unittest.TestCase):
+
+class TestVectorFiles:
     """test reading and writing of vector files"""
     def testVectorRead(self):
         """make sure that a vector file can be read correctly"""
         v = volumeFromFile(inputVector)
         dimnames = v.dimnames
         v.closeVolume()
-        self.assertEqual(dimnames[0], "vector_dimension")
+        assert dimnames[0] == "vector_dimension"
     def testVectorRead2(self):
         """make sure that volume has four dimensions"""
         v = volumeFromFile(inputVector)
         ndims = v.ndims
         v.closeVolume()
-        self.assertEqual(ndims, 4)
+        assert ndims == 4
     def testReduceDimensions(self):
         """ensure that vector file can be turned into spatial volume"""
         v = volumeFromFile(inputVector)
@@ -412,9 +430,9 @@ class testVectorFiles(unittest.TestCase):
         ndims = v2.ndims
         v.closeVolume()
         v2.closeVolume()
-        self.assertEqual(ndims, 3)
-        
-class testDirectionCosines(unittest.TestCase):
+        assert ndims == 3
+
+class TestDirectionCosines:
     """test that pyminc deals correctly with direction cosines"""
     def testDefaultDirCos3DVFF(self):
         """testing reading the direction cosines of a file with standard values (volumeFromFile)"""
@@ -425,75 +443,75 @@ class testDirectionCosines(unittest.TestCase):
         # for it using the known defaults, because libminc does extract the correct
         # default values
         #
-        self.assertAlmostEqual(v._x_direction_cosines[0], 1.0, 8)
-        self.assertAlmostEqual(v._x_direction_cosines[1], 0.0, 8)
-        self.assertAlmostEqual(v._x_direction_cosines[2], 0.0, 8)
-        
-        self.assertAlmostEqual(v._y_direction_cosines[0], 0.0, 8)
-        self.assertAlmostEqual(v._y_direction_cosines[1], 1.0, 8)
-        self.assertAlmostEqual(v._y_direction_cosines[2], 0.0, 8)
-        
-        self.assertAlmostEqual(v._z_direction_cosines[0], 0.0, 8)
-        self.assertAlmostEqual(v._z_direction_cosines[1], 0.0, 8)
-        self.assertAlmostEqual(v._z_direction_cosines[2], 1.0, 8)
+        assert v._x_direction_cosines[0] == approx(1.0)
+        assert v._x_direction_cosines[1] == approx(0.0)
+        assert v._x_direction_cosines[2] == approx(0.0)
+
+        assert v._y_direction_cosines[0] == approx(0.0)
+        assert v._y_direction_cosines[1] == approx(1.0)
+        assert v._y_direction_cosines[2] == approx(0.0)
+
+        assert v._z_direction_cosines[0] == approx(0.0)
+        assert v._z_direction_cosines[1] == approx(0.0)
+        assert v._z_direction_cosines[2] == approx(1.0)
     def testNonDefaultDirCos3DVFF(self):
         """testing reading the direction cosines of a file with non-standard values (volumeFromFile)"""
         v = volumeFromFile(input3DdirectionCosines)
-        
+
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(v._x_direction_cosines[0], float(from_file[0]), 8)
-        self.assertAlmostEqual(v._x_direction_cosines[1], float(from_file[1]), 8)
-        self.assertAlmostEqual(v._x_direction_cosines[2], float(from_file[2]), 8)
-        
+        assert v._x_direction_cosines[0] == approx(float(from_file[0]))
+        assert v._x_direction_cosines[1] == approx(float(from_file[1]))
+        assert v._x_direction_cosines[2] == approx(float(from_file[2]))
+
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(v._y_direction_cosines[0], float(from_file[0]), 8)
-        self.assertAlmostEqual(v._y_direction_cosines[1], float(from_file[1]), 8)
-        self.assertAlmostEqual(v._y_direction_cosines[2], float(from_file[2]), 8)
-        
+        assert v._y_direction_cosines[0] == approx(float(from_file[0]))
+        assert v._y_direction_cosines[1] == approx(float(from_file[1]))
+        assert v._y_direction_cosines[2] == approx(float(from_file[2]))
+
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(v._z_direction_cosines[0], float(from_file[0]), 8)
-        self.assertAlmostEqual(v._z_direction_cosines[1], float(from_file[1]), 8)
-        self.assertAlmostEqual(v._z_direction_cosines[2], float(from_file[2]), 8)
-        
+        assert v._z_direction_cosines[0] == approx(float(from_file[0]))
+        assert v._z_direction_cosines[1] == approx(float(from_file[1]))
+        assert v._z_direction_cosines[2] == approx(float(from_file[2]))
+
     def testWriteStandardDirCos3D(self):
         """test writing out a file with standard direction cosines (volumeLikeFile)"""
         v = volumeLikeFile(inputFile_ushort, outputFilename, data=True)
         v.data[::] = 367623
         v.writeFile()
-        
+
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), 1.0, 8)
-        self.assertAlmostEqual(float(from_file[1]), 0.0, 8)
-        self.assertAlmostEqual(float(from_file[2]), 0.0, 8)
-        
+        assert float(from_file[0]) == approx(1.0)
+        assert float(from_file[1]) == approx(0.0)
+        assert float(from_file[2]) == approx(0.0)
+
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), 0.0, 8)
-        self.assertAlmostEqual(float(from_file[1]), 1.0, 8)
-        self.assertAlmostEqual(float(from_file[2]), 0.0, 8)
+        assert float(from_file[0]) == approx(0.0)
+        assert float(from_file[1]) == approx(1.0)
+        assert float(from_file[2]) == approx(0.0)
 
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), 0.0, 8)
-        self.assertAlmostEqual(float(from_file[1]), 0.0, 8)
-        self.assertAlmostEqual(float(from_file[2]), 1.0, 8)
-        
+        assert float(from_file[0]) == approx(0.0)
+        assert float(from_file[1]) == approx(0.0)
+        assert float(from_file[2]) == approx(1.0)
+
     def testWriteNonStandardDirCos3D(self):
         """test writing out a file with non standard direction cosines (volumeLikeFile)"""
         v = volumeLikeFile(input3DdirectionCosines, outputFilename, data=True)
         v.data[::] = 282518
         v.writeFile()
-        
+
         ### X
         pipe_out = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % outputFilename, "r")
         from_file_out = pipe_out.read().rstrip().split(" ")
@@ -501,11 +519,11 @@ class testDirectionCosines(unittest.TestCase):
         pipe_in = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file_in = pipe_in.read().rstrip().split(" ")
         pipe_in.close()
-        
-        self.assertAlmostEqual(float(from_file_out[0]), float(from_file_in[0]), 8)
-        self.assertAlmostEqual(float(from_file_out[1]), float(from_file_in[1]), 8)
-        self.assertAlmostEqual(float(from_file_out[2]), float(from_file_in[2]), 8)
-        
+
+        assert float(from_file_out[0]) == approx(float(from_file_in[0]))
+        assert float(from_file_out[1]) == approx(float(from_file_in[1]))
+        assert float(from_file_out[2]) == approx(float(from_file_in[2]))
+
         ### Y
         pipe_out = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % outputFilename, "r")
         from_file_out = pipe_out.read().rstrip().split(" ")
@@ -513,11 +531,11 @@ class testDirectionCosines(unittest.TestCase):
         pipe_in = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file_in = pipe_in.read().rstrip().split(" ")
         pipe_in.close()
-        
-        self.assertAlmostEqual(float(from_file_out[0]), float(from_file_in[0]), 8)
-        self.assertAlmostEqual(float(from_file_out[1]), float(from_file_in[1]), 8)
-        self.assertAlmostEqual(float(from_file_out[2]), float(from_file_in[2]), 8)
-        
+
+        assert float(from_file_out[0]) == approx(float(from_file_in[0]))
+        assert float(from_file_out[1]) == approx(float(from_file_in[1]))
+        assert float(from_file_out[2]) == approx(float(from_file_in[2]))
+
         ### Z
         pipe_out = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % outputFilename, "r")
         from_file_out = pipe_out.read().rstrip().split(" ")
@@ -525,11 +543,11 @@ class testDirectionCosines(unittest.TestCase):
         pipe_in = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % input3DdirectionCosines, "r")
         from_file_in = pipe_in.read().rstrip().split(" ")
         pipe_in.close()
-        
-        self.assertAlmostEqual(float(from_file_out[0]), float(from_file_in[0]), 8)
-        self.assertAlmostEqual(float(from_file_out[1]), float(from_file_in[1]), 8)
-        self.assertAlmostEqual(float(from_file_out[2]), float(from_file_in[2]), 8)
-        
+
+        assert float(from_file_out[0]) == approx(float(from_file_in[0]))
+        assert float(from_file_out[1]) == approx(float(from_file_in[1]))
+        assert float(from_file_out[2]) == approx(float(from_file_in[2]))
+
     def testDirCosVolumeFromDescription(self):
         """test creating a volume with direction cosines using volumeFromDescription"""
         x0 = 0.9563735353
@@ -541,50 +559,50 @@ class testDirectionCosines(unittest.TestCase):
         z0 = 0.0217054823
         z1 = 0.1252894877
         z2 = 0.9344668322
-        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"), 
+        v = volumeFromDescription(newFilename, ("xspace", "yspace", "zspace"),
                                   (10,20,30), (-10,10,20), (0.5,0.5,0.5),
                                   volumeType="float",
                                   x_dir_cosines=(x0, x1, x2),
                                   y_dir_cosines=(y0, y1, y2),
                                   z_dir_cosines=(z0, z1, z2))
         v.data[::] = 5
-        
+
         ### test that the attributes have been set
-        self.assertAlmostEqual(v._x_direction_cosines[0], x0, 8)
-        self.assertAlmostEqual(v._x_direction_cosines[1], x1, 8)
-        self.assertAlmostEqual(v._x_direction_cosines[2], x2, 8)
-        
-        self.assertAlmostEqual(v._y_direction_cosines[0], y0, 8)
-        self.assertAlmostEqual(v._y_direction_cosines[1], y1, 8)
-        self.assertAlmostEqual(v._y_direction_cosines[2], y2, 8)
-        
-        self.assertAlmostEqual(v._z_direction_cosines[0], z0, 8)
-        self.assertAlmostEqual(v._z_direction_cosines[1], z1, 8)
-        self.assertAlmostEqual(v._z_direction_cosines[2], z2, 8)
-        
+        assert v._x_direction_cosines[0] == approx(x0)
+        assert v._x_direction_cosines[1] == approx(x1)
+        assert v._x_direction_cosines[2] == approx(x2)
+
+        assert v._y_direction_cosines[0] == approx(y0)
+        assert v._y_direction_cosines[1] == approx(y1)
+        assert v._y_direction_cosines[2] == approx(y2)
+
+        assert v._z_direction_cosines[0] == approx(z0)
+        assert v._z_direction_cosines[1] == approx(z1)
+        assert v._z_direction_cosines[2] == approx(z2)
+
         v.writeFile()
-        
+
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % newFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), x0, 8)
-        self.assertAlmostEqual(float(from_file[1]), x1, 8)
-        self.assertAlmostEqual(float(from_file[2]), x2, 8)
-        
+        assert float(from_file[0]) == approx(x0)
+        assert float(from_file[1]) == approx(x1)
+        assert float(from_file[2]) == approx(x2)
+
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % newFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), y0, 8)
-        self.assertAlmostEqual(float(from_file[1]), y1, 8)
-        self.assertAlmostEqual(float(from_file[2]), y2, 8)
+        assert float(from_file[0]) == approx(y0)
+        assert float(from_file[1]) == approx(y1)
+        assert float(from_file[2]) == approx(y2)
 
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % newFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), z0, 8)
-        self.assertAlmostEqual(float(from_file[1]), z1, 8)
-        self.assertAlmostEqual(float(from_file[2]), z2, 8)
-        
+        assert float(from_file[0]) == approx(z0)
+        assert float(from_file[1]) == approx(z1)
+        assert float(from_file[2]) == approx(z2)
+
     def testDirCosVolumeFromData(self):
         """test creating a volume with direction cosines using volumeFromData"""
         x0 = 0.8476348547
@@ -605,101 +623,94 @@ class testDirectionCosines(unittest.TestCase):
                            x_dir_cosines=(x0, x1, x2),
                            y_dir_cosines=(y0, y1, y2),
                            z_dir_cosines=(z0, z1, z2))
-        
+
         ### test that the attributes have been set
-        self.assertAlmostEqual(v._x_direction_cosines[0], x0, 8)
-        self.assertAlmostEqual(v._x_direction_cosines[1], x1, 8)
-        self.assertAlmostEqual(v._x_direction_cosines[2], x2, 8)
-        
-        self.assertAlmostEqual(v._y_direction_cosines[0], y0, 8)
-        self.assertAlmostEqual(v._y_direction_cosines[1], y1, 8)
-        self.assertAlmostEqual(v._y_direction_cosines[2], y2, 8)
-        
-        self.assertAlmostEqual(v._z_direction_cosines[0], z0, 8)
-        self.assertAlmostEqual(v._z_direction_cosines[1], z1, 8)
-        self.assertAlmostEqual(v._z_direction_cosines[2], z2, 8)
-        
+        assert v._x_direction_cosines[0] == approx(x0)
+        assert v._x_direction_cosines[1] == approx(x1)
+        assert v._x_direction_cosines[2] == approx(x2)
+
+        assert v._y_direction_cosines[0] == approx(y0)
+        assert v._y_direction_cosines[1] == approx(y1)
+        assert v._y_direction_cosines[2] == approx(y2)
+
+        assert v._z_direction_cosines[0] == approx(z0)
+        assert v._z_direction_cosines[1] == approx(z1)
+        assert v._z_direction_cosines[2] == approx(z2)
+
         v.writeFile()
-        
+
         pipe = os.popen("mincinfo -attvalue xspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), x0, 8)
-        self.assertAlmostEqual(float(from_file[1]), x1, 8)
-        self.assertAlmostEqual(float(from_file[2]), x2, 8)
-        
+        assert float(from_file[0]) == approx(x0)
+        assert float(from_file[1]) == approx(x1)
+        assert float(from_file[2]) == approx(x2)
+
         pipe = os.popen("mincinfo -attvalue yspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), y0, 8)
-        self.assertAlmostEqual(float(from_file[1]), y1, 8)
-        self.assertAlmostEqual(float(from_file[2]), y2, 8)
+        assert float(from_file[0]) == approx(y0)
+        assert float(from_file[1]) == approx(y1)
+        assert float(from_file[2]) == approx(y2)
 
         pipe = os.popen("mincinfo -attvalue zspace:direction_cosines %s" % outputFilename, "r")
         from_file = pipe.read().rstrip().split(" ")
         pipe.close()
-        self.assertAlmostEqual(float(from_file[0]), z0, 8)
-        self.assertAlmostEqual(float(from_file[1]), z1, 8)
-        self.assertAlmostEqual(float(from_file[2]), z2, 8)
-    
+        assert float(from_file[0]) == approx(z0)
+        assert float(from_file[1]) == approx(z1)
+        assert float(from_file[2]) == approx(z2)
+
     def testDirCosVolumeFromInstance(self):
         """test creating a volume with direction cosines using volumeFromInstance"""
         in_v = volumeFromFile(input3DdirectionCosines)
         v = volumeFromInstance(in_v, outputFilename, volumeType="short")
         v.data[::] = 5
-        
-        self.assertAlmostEqual(v._x_direction_cosines[0], in_v._x_direction_cosines[0], 8)
-        self.assertAlmostEqual(v._x_direction_cosines[1], in_v._x_direction_cosines[1], 8)
-        self.assertAlmostEqual(v._x_direction_cosines[2], in_v._x_direction_cosines[2], 8)
-        
-        self.assertAlmostEqual(v._y_direction_cosines[0], in_v._y_direction_cosines[0], 8)
-        self.assertAlmostEqual(v._y_direction_cosines[1], in_v._y_direction_cosines[1], 8)
-        self.assertAlmostEqual(v._y_direction_cosines[2], in_v._y_direction_cosines[2], 8)
-        
-        self.assertAlmostEqual(v._z_direction_cosines[0], in_v._z_direction_cosines[0], 8)
-        self.assertAlmostEqual(v._z_direction_cosines[1], in_v._z_direction_cosines[1], 8)
-        self.assertAlmostEqual(v._z_direction_cosines[2], in_v._z_direction_cosines[2], 8)
-        
+
+        assert v._x_direction_cosines[0] == approx(in_v._x_direction_cosines[0])
+        assert v._x_direction_cosines[1] == approx(in_v._x_direction_cosines[1])
+        assert v._x_direction_cosines[2] == approx(in_v._x_direction_cosines[2])
+
+        assert v._y_direction_cosines[0] == approx(in_v._y_direction_cosines[0])
+        assert v._y_direction_cosines[1] == approx(in_v._y_direction_cosines[1])
+        assert v._y_direction_cosines[2] == approx(in_v._y_direction_cosines[2])
+
+        assert v._z_direction_cosines[0] == approx(in_v._z_direction_cosines[0])
+        assert v._z_direction_cosines[1] == approx(in_v._z_direction_cosines[1])
+        assert v._z_direction_cosines[2] == approx(in_v._z_direction_cosines[2])
+
         v.writeFile()
         in_v.closeVolume()
 
-class testXfmsAppliedToCoordinates(unittest.TestCase):
+class TestXfmsAppliedToCoordinates:
     """test that xfm files can be used to transform x,y,z coordinates"""
     def testForwardTransformSingleXfm(self):
         """testing coordinates transformed using the forward transform and a single transformation"""
-        
+
         new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00)
-        self.assertAlmostEqual(new_x, 4.33400016486645, 8)
-        self.assertAlmostEqual(new_y, 32.3265016365052, 8)
-        self.assertAlmostEqual(new_z, -12.4399995803833, 8)
-    
+        assert new_x == approx(4.33400016486645)
+        assert new_y == approx(32.3265016365052)
+        assert new_z == approx(-12.4399995803833)
+
     def testInverseTransformSingleXfm(self):
         """testing coordinates transformed using the inverse transform and a single transformation"""
-        
+
         new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00, use_inverse=True)
-        self.assertAlmostEqual(new_x, 18.4099990008772, 8)
-        self.assertAlmostEqual(new_y, -3.64755821904214, 8)
-        self.assertAlmostEqual(new_z, 0.520000139872233, 8)
-    
+        assert new_x == approx(18.4099990008772)
+        assert new_y == approx(-3.64755821904214)
+        assert new_z == approx(0.520000139872233)
+
     def testForwardTransformConcatenatedXfm(self):
         """testing coordinates transformed using the forward transform and a concatenated transformation"""
-        
+
         new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00)
-        self.assertAlmostEqual(new_x, 259.159993714094, 8)
-        self.assertAlmostEqual(new_y, 188.041454144745, 8)
-        self.assertAlmostEqual(new_z, -1744.15997695923, 8)
-    
+        assert new_x == approx(259.159993714094)
+        assert new_y == approx(188.041454144745)
+        assert new_z == approx(-1744.15997695923)
+
     def testInverseTransformConcatenatedXfm(self):
         """testing coordinates transformed using the inverse transform and a concatenated transformation"""
-        
+
         new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00, use_inverse=True)
-        self.assertAlmostEqual(new_x, -119.559994975925, 8)
-        self.assertAlmostEqual(new_y, -2.72634880128239, 8)
-        self.assertAlmostEqual(new_z, 0.0509524723840147, 8)
-    
-        
-        
-if __name__ == "__main__":
-    unittest.main()
-        
-        
+        assert new_x == approx(-119.559994975925)
+        assert new_y == approx(-2.72634880128239)
+        assert new_z == approx(0.0509524723840147)
