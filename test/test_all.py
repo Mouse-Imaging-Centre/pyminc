@@ -443,17 +443,10 @@ class TestDirectionCosines:
         # for it using the known defaults, because libminc does extract the correct
         # default values
         #
-        assert v._x_direction_cosines[0] == approx(1.0)
-        assert v._x_direction_cosines[1] == approx(0.0)
-        assert v._x_direction_cosines[2] == approx(0.0)
+        assert v._x_direction_cosines == approx((1.0, 0.0, 0.0))
+        assert v._y_direction_cosines == approx((0.0, 1.0, 0.0))
+        assert v._z_direction_cosines == approx((0.0, 0.0, 1.0))
 
-        assert v._y_direction_cosines[0] == approx(0.0)
-        assert v._y_direction_cosines[1] == approx(1.0)
-        assert v._y_direction_cosines[2] == approx(0.0)
-
-        assert v._z_direction_cosines[0] == approx(0.0)
-        assert v._z_direction_cosines[1] == approx(0.0)
-        assert v._z_direction_cosines[2] == approx(1.0)
     def testNonDefaultDirCos3DVFF(self):
         """testing reading the direction cosines of a file with non-standard values (volumeFromFile)"""
         v = volumeFromFile(input3DdirectionCosines)
@@ -568,17 +561,11 @@ class TestDirectionCosines:
         v.data[::] = 5
 
         ### test that the attributes have been set
-        assert v._x_direction_cosines[0] == approx(x0)
-        assert v._x_direction_cosines[1] == approx(x1)
-        assert v._x_direction_cosines[2] == approx(x2)
+        assert v._x_direction_cosines == approx((x0, x1, x2))
 
-        assert v._y_direction_cosines[0] == approx(y0)
-        assert v._y_direction_cosines[1] == approx(y1)
-        assert v._y_direction_cosines[2] == approx(y2)
+        assert v._y_direction_cosines == approx((y0, y1, y2))
 
-        assert v._z_direction_cosines[0] == approx(z0)
-        assert v._z_direction_cosines[1] == approx(z1)
-        assert v._z_direction_cosines[2] == approx(z2)
+        assert v._z_direction_cosines == approx((z0, z1, z2))
 
         v.writeFile()
 
@@ -625,17 +612,9 @@ class TestDirectionCosines:
                            z_dir_cosines=(z0, z1, z2))
 
         ### test that the attributes have been set
-        assert v._x_direction_cosines[0] == approx(x0)
-        assert v._x_direction_cosines[1] == approx(x1)
-        assert v._x_direction_cosines[2] == approx(x2)
-
-        assert v._y_direction_cosines[0] == approx(y0)
-        assert v._y_direction_cosines[1] == approx(y1)
-        assert v._y_direction_cosines[2] == approx(y2)
-
-        assert v._z_direction_cosines[0] == approx(z0)
-        assert v._z_direction_cosines[1] == approx(z1)
-        assert v._z_direction_cosines[2] == approx(z2)
+        assert v._x_direction_cosines == approx((x0, x1, x2))
+        assert v._y_direction_cosines == approx((y0, y1, y2))
+        assert v._z_direction_cosines == approx((z0, z1, z2))
 
         v.writeFile()
 
@@ -669,14 +648,16 @@ class TestDirectionCosines:
         assert v._x_direction_cosines[0] == approx(in_v._x_direction_cosines[0])
         assert v._x_direction_cosines[1] == approx(in_v._x_direction_cosines[1])
         assert v._x_direction_cosines[2] == approx(in_v._x_direction_cosines[2])
-
         assert v._y_direction_cosines[0] == approx(in_v._y_direction_cosines[0])
         assert v._y_direction_cosines[1] == approx(in_v._y_direction_cosines[1])
         assert v._y_direction_cosines[2] == approx(in_v._y_direction_cosines[2])
-
         assert v._z_direction_cosines[0] == approx(in_v._z_direction_cosines[0])
         assert v._z_direction_cosines[1] == approx(in_v._z_direction_cosines[1])
         assert v._z_direction_cosines[2] == approx(in_v._z_direction_cosines[2])
+        # FIXME fails:
+        #assert in_v._y_direction_cosines == approx(v._x_direction_cosines)
+        #assert v._y_direction_cosines == approx(in_v._y_direction_cosines)
+        #assert v._z_direction_cosines == approx(in_v._z_direction_cosines)
 
         v.writeFile()
         in_v.closeVolume()
@@ -686,31 +667,24 @@ class TestXfmsAppliedToCoordinates:
     def testForwardTransformSingleXfm(self):
         """testing coordinates transformed using the forward transform and a single transformation"""
 
-        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00)
-        assert new_x == approx(4.33400016486645)
-        assert new_y == approx(32.3265016365052)
-        assert new_z == approx(-12.4399995803833)
+        new_xyz_coords = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00)
+        assert new_xyz_coords == approx((4.33400016486645, 32.3265016365052, -12.4399995803833))
 
     def testInverseTransformSingleXfm(self):
         """testing coordinates transformed using the inverse transform and a single transformation"""
 
-        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00, use_inverse=True)
-        assert new_x == approx(18.4099990008772)
-        assert new_y == approx(-3.64755821904214)
-        assert new_z == approx(0.520000139872233)
+        new_xyz_coords = transform_xyz_coordinates_using_xfm(outputXfmFilename1, 6.68, 3.14, 7.00, use_inverse=True)
+        assert new_xyz_coords == approx((18.4099990008772, -3.64755821904214, 0.520000139872233))
 
     def testForwardTransformConcatenatedXfm(self):
         """testing coordinates transformed using the forward transform and a concatenated transformation"""
 
-        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00)
-        assert new_x == approx(259.159993714094)
-        assert new_y == approx(188.041454144745)
-        assert new_z == approx(-1744.15997695923)
+        new_xyz_coords = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00)
+        assert new_xyz_coords == approx((259.159993714094, 188.041454144745, -1744.15997695923))
 
     def testInverseTransformConcatenatedXfm(self):
         """testing coordinates transformed using the inverse transform and a concatenated transformation"""
 
-        new_x, new_y, new_z = transform_xyz_coordinates_using_xfm(outputXfmFilename3, 6.68, 3.14, 7.00, use_inverse=True)
-        assert new_x == approx(-119.559994975925)
-        assert new_y == approx(-2.72634880128239)
-        assert new_z == approx(0.0509524723840147)
+        new_xyz_coords = transform_xyz_coordinates_using_xfm(outputXfmFilename3,
+                                                             6.68, 3.14, 7.00, use_inverse=True)
+        assert new_xyz_coords == approx((-119.559994975925, -2.72634880128239, 0.0509524723840147))
