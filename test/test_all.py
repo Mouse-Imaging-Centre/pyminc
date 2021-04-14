@@ -12,7 +12,23 @@ from pytest import approx
 
 from parameterized import parameterized
 
-outputFilename = tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc").name
+
+@pytest.fixture
+def outputFilename():
+  f = tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc", delete=False)
+  yield f.name
+  try:
+    if os.path.exists(f.name):  # not actually needed but otherwise Pytest reports all the exceptions
+      os.remove(f.name)
+  except FileNotFoundError:
+    # Pyminc didn't write data to this file.  This is fine.
+    # (We could have separate fixtures for the case when the file should exist or not,
+    # but this seems like testing in a few tests should be sufficient)
+    pass
+
+def tmp_mnc_file():
+  return tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc", delete=False)
+
 emptyFilename = tempfile.NamedTemporaryFile(prefix="test-empty-", suffix=".mnc").name
 newFilename = tempfile.NamedTemporaryFile(prefix="test-new-volume-", suffix=".mnc").name
 
@@ -73,6 +89,10 @@ input_files_and_dtypes = [("byte", inputFile_byte),
 
 dtypes = [dtype for dtype, _ in input_files_and_dtypes]
 input_files = [f for _, f in input_files_and_dtypes]
+
+data_block = np.arange(24000).reshape(20,30,40)
+data_blocks = (data_block, data_block.T.copy())
+
 
 def tearDownModule():
     os.remove(inputFile_byte)
@@ -154,7 +174,9 @@ class TestWriteFileDataTypes:
     ############################################################################
     @parameterized.expand(dtypes)
     def testWriteDataAsDtype_vFI(self, dtype):
-        """ensure that a volume created by volumeFromInstance as byte is written out as such"""
+      """ensure that a volume created by volumeFromInstance as byte is written out as such"""
+      with tmp_mnc_file() as f:
+        outputFilename = f.name
         in_v = volumeFromFile(inputFile_short)
         v = volumeFromInstance(in_v, outputFilename, volumeType=dtype)
         v.data[::] = 5
@@ -168,7 +190,9 @@ class TestWriteFileDataTypes:
     ############################################################################
     @parameterized.expand(input_files_and_dtypes)
     def testWriteDataAsDtype_vLF_base(self, dtype, input_file):
-        """ensure that a volume created by volumeLikeFile has the same type as its input (byte)"""
+      """ensure that a volume created by volumeLikeFile has the same type as its input (byte)"""
+      with tmp_mnc_file() as f:
+        outputFilename = f.name
         v = volumeLikeFile(input_file, outputFilename)
         v.data[::] = 5
         v.writeFile()
@@ -181,7 +205,9 @@ class TestWriteFileDataTypes:
     #########################
     @parameterized.expand(input_files_and_dtypes)
     def testWriteDataAsDtype_vLF(self, dtype, input_file):
-        """ensure that a volume created by volumeLikeFile as byte is written out as such (input file has different volumeType)"""
+      """ensure that a volume created by volumeLikeFile as byte is written out as such (input file has different volumeType)"""
+      with tmp_mnc_file() as f:
+        outputFilename = f.name
         v = volumeLikeFile(input_file, outputFilename, volumeType=dtype)
         v.data[::] = 5
         v.writeFile()
@@ -192,10 +218,13 @@ class TestWriteFileDataTypes:
     ############################################################################
     # volumeFromData
     ############################################################################
-    @parameterized.expand(dtypes)
-    def testWriteDataAsDtype_vFD(self, dtype):
-        """ensure that a volume created by volumeFromData as byte is written out as such"""
-        data_block = np.arange(24000).reshape(20,30,40)
+    @pytest.mark.parametrize("dtype", dtypes)
+    @pytest.mark.parametrize("data_block", data_blocks)
+    def testWriteDataAsDtype_vFD(self, dtype, data_block):
+      """ensure that a volume created by volumeFromData as byte is written out as such"""
+      with tmp_mnc_file() as f:
+        outputFilename = f.name
+        #data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
@@ -205,37 +234,47 @@ class TestWriteFileDataTypes:
         # retrieve data type from written file:
         vol_in = volumeFromFile(outputFilename)
         assert vol_in.volumeType == dtype
-    @parameterized.expand(dtypes)
-    def testWriteDataAsDtype_vFD_content(self, dtype):
-        """ensure that a volume created by volumeFromData as byte writes correct data"""
-        data_block = np.arange(24000).reshape(20,30,40)
+    @pytest.mark.parametrize("dtype", dtypes)
+    @pytest.mark.parametrize("data_block", data_blocks)
+    def testWriteDataAsDtype_vFD_content(self, dtype, data_block):
+      """ensure that a volume created by volumeFromData as byte writes correct data"""
+      with tmp_mnc_file() as f:
+        outputFilename = f.name
+        #data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
                            dimnames=("xspace", "yspace", "zspace"),
                            starts=(0, 0, 0),
                            steps=(1, 1, 1),
                            volumeType=dtype)
         v.writeFile()
+        v.closeVolume()
         # retrieve mean of data written to disk:
-        pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
-        output = float(pipe.read())
-        pipe.close()
-        assert output == approx(data_block.mean())
+        #pipe = os.popen("mincstats -mean -quiet %s" % outputFilename, "r")
+        #output = float(pipe.read())
+        #pipe.close()
+        #assert output == approx(data_block.mean())
         #v_in = volumeFromFile(outputFilename)
         #self.assertAlmostEqual(data_block, v_in.data)  # fails!!!
+
+        if dtype in ["byte", "ubyte", "short", "ushort", "int", "uint"]:
+            pytest.xfail("not enough precision")
+
+        vol_in = volumeFromFile(outputFilename)
+        np.testing.assert_allclose(data_block, vol_in.data) #, rtol = 3e-6)
 
     #def testWriteNonContiguousArray(self):
     #    data_block = np.arange(24000).reshape(20, 30, 40).T
     #    v = volumeFromData(outputFilename, data_block,
     #                       dimnames=("xspace", "yspace", "zspace"),
-    #                       starts = (0, 0, 0), steps = (0.04, 0.04, 0.04), volumeType="uint")
+    #                       starts = (0, 0, 0), steps = (0.04, 0.04, 0.04), volumeType="float")
     #    v.writeFile()
     #    vol_in = volumeFromFile(outputFilename)
-    #    self.assertAlmostEqual(data_block, vol_in.data)
+    #    np.testing.assert_allclose(data_block, vol_in.data)
 
     ############################################################################
     # using volumeFromData specifying the dtype from a numpy array
     ############################################################################
-    def testWriteDataFromNumpyByte(self):
+    def testWriteDataFromNumpyByte(self, outputFilename):
         """ensure that a volume created by volumeFromData uses the dtype of the datablock by default"""
         data_block = np.arange(24000, dtype="byte").reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
@@ -245,7 +284,7 @@ class TestWriteFileDataTypes:
                            volumeType="ushort")
         v.writeFile()
         assert v.dtype == "byte"
-    def testWriteDataFromNumpyChangeDtype(self):
+    def testWriteDataFromNumpyChangeDtype(self, outputFilename):
         """ensure that a volume created by volumeFromData can overwrite the dtype if set explicitly"""
         data_block = np.arange(24000, dtype="ushort").reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
@@ -259,7 +298,7 @@ class TestWriteFileDataTypes:
     ############################################################################
     # writeFile() sets the image:complete flag
     ############################################################################
-    def testSettingImageCompleteFlag(self):
+    def testSettingImageCompleteFlag(self, outputFilename):
         """ensure that when writeFile() is called, the image:complete flag is set correctly"""
         data_block = np.arange(24000).reshape(20,30,40)
         v = volumeFromData(outputFilename, data_block,
@@ -274,7 +313,7 @@ class TestWriteFileDataTypes:
         assert output == approx(0.0)
 
 class TestCopyConstructor:
-    def testCopyConstructorDimensions(self):
+    def testCopyConstructorDimensions(self, outputFilename):
         """dimensions should be the same in copied volume"""
         v = volumeFromFile(inputFile_ushort)
         n = volumeFromInstance(v, outputFilename)
@@ -283,7 +322,7 @@ class TestCopyConstructor:
         n.closeVolume()
         v.closeVolume()
         assert ns == vs
-    def testCopyWithoutData(self):
+    def testCopyWithoutData(self, outputFilename):
         """copying without data=True flag should result in array of zeros"""
         v = volumeFromFile(inputFile_ushort)
         n = volumeFromInstance(v, outputFilename)
@@ -291,7 +330,7 @@ class TestCopyConstructor:
         v.closeVolume()
         n.closeVolume()
         assert m == 0
-    def testCopyWithData(self):
+    def testCopyWithData(self, outputFilename):
         """copying with data=True flag should result in a copy of the data"""
         v = volumeFromFile(inputFile_ushort)
         n = volumeFromInstance(v, outputFilename, data=True)
@@ -300,7 +339,7 @@ class TestCopyConstructor:
         v.closeVolume()
         n.closeVolume()
         assert va == na
-    def testCopyWithData2(self):
+    def testCopyWithData2(self, outputFilename):
         """ensure that data is copied and not referenced"""
         v = volumeFromFile(inputFile_ushort)
         n = volumeFromInstance(v, outputFilename, data=True)
@@ -337,7 +376,7 @@ class TestEmptyConstructor:
 
 class TestReadWrite:
     """test the read-write cycle"""
-    def testReadWrite(self):
+    def testReadWrite(self, outputFilename):
         """ensure that data can be read and written correctly"""
         v = volumeFromFile(inputFile_ushort)
         o = volumeFromInstance(v, outputFilename, data=True)
@@ -384,7 +423,7 @@ class TestHyperslabs:
         hyperslab = v.getHyperslab(start, count)
         v.closeVolume()
         assert hyperslab.start[1] == start[1]
-    def testSetHyperslab(self):
+    def testSetHyperslab(self, outputFilename):
         """setting hyperslab should change underlying volume"""
         v = volumeFromFile(inputFile_ushort)
         o = volumeFromInstance(v, outputFilename, data=False)
@@ -396,8 +435,22 @@ class TestHyperslabs:
         h2 = v2.getHyperslab((10,0,0), (1, v2.sizes[1], v2.sizes[2]))
         v2.closeVolume()
         np.testing.assert_allclose(hyperslab, h2)
+    def testSetHyperslabArrayNonContiguous(self, outputFilename):
+        """same as above but with a non-C-contiguous hyperslab"""
+        v = volumeFromFile(inputFile_ushort)
+        o = volumeFromInstance(v, outputFilename, data=False)
+        hyperslab = v.getHyperslab((10,0,0), (10, 15, 20)).T
+        hyperslab = hyperslab * 100
+        o.setHyperslab(hyperslab, (10,0,0), (20, 15, 10))
+        o.writeFile()
+        v2 = volumeFromFile(outputFilename)
+        h2 = v2.getHyperslab((10,0,0), (20, 15, 10))
+        v2.closeVolume()
+        np.testing.assert_allclose(hyperslab, h2)
     def testHyperslabArray(self):
-        """hyperslab should be reinsertable into volume"""
+      """hyperslab should be reinsertable into volume"""
+      with tmp_mnc_file() as f:
+        outputFilename = f.name
         v = volumeFromFile(inputFile_ushort)
         o = volumeFromInstance(v, outputFilename, data=False)
         hyperslab = v.getHyperslab((10,0,0), (1, v.sizes[1], v.sizes[2]))
@@ -423,8 +476,10 @@ class TestVectorFiles:
         ndims = v.ndims
         v.closeVolume()
         assert ndims == 4
-    def testReduceDimensions(self):
+    def testReduceDimensions(self, outputFilename):
         """ensure that vector file can be turned into spatial volume"""
+        f = tmp_mnc_file()
+        outputFilename = f.name
         v = volumeFromFile(inputVector)
         v2 = volumeFromInstance(v, outputFilename, dims=["xspace", "yspace", "zspace"])
         ndims = v2.ndims
@@ -472,7 +527,7 @@ class TestDirectionCosines:
         assert v._z_direction_cosines[1] == approx(float(from_file[1]))
         assert v._z_direction_cosines[2] == approx(float(from_file[2]))
 
-    def testWriteStandardDirCos3D(self):
+    def testWriteStandardDirCos3D(self, outputFilename):
         """test writing out a file with standard direction cosines (volumeLikeFile)"""
         v = volumeLikeFile(inputFile_ushort, outputFilename, data=True)
         v.data[::] = 367623
@@ -499,7 +554,7 @@ class TestDirectionCosines:
         assert float(from_file[1]) == approx(0.0)
         assert float(from_file[2]) == approx(1.0)
 
-    def testWriteNonStandardDirCos3D(self):
+    def testWriteNonStandardDirCos3D(self, outputFilename):
         """test writing out a file with non standard direction cosines (volumeLikeFile)"""
         v = volumeLikeFile(input3DdirectionCosines, outputFilename, data=True)
         v.data[::] = 282518
@@ -590,7 +645,7 @@ class TestDirectionCosines:
         assert float(from_file[1]) == approx(z1)
         assert float(from_file[2]) == approx(z2)
 
-    def testDirCosVolumeFromData(self):
+    def testDirCosVolumeFromData(self, outputFilename):
         """test creating a volume with direction cosines using volumeFromData"""
         x0 = 0.8476348547
         x1 = 0.2164954895
@@ -639,7 +694,7 @@ class TestDirectionCosines:
         assert float(from_file[1]) == approx(z1)
         assert float(from_file[2]) == approx(z2)
 
-    def testDirCosVolumeFromInstance(self):
+    def testDirCosVolumeFromInstance(self, outputFilename):
         """test creating a volume with direction cosines using volumeFromInstance"""
         in_v = volumeFromFile(input3DdirectionCosines)
         v = volumeFromInstance(in_v, outputFilename, volumeType="short")
