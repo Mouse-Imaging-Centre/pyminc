@@ -310,11 +310,12 @@ class mincVolume(object):
             self.setVolumeRanges(data)
             if self.debug:
                 print("before setting of hyperslab")
+            arr = data if data.flags['C_CONTIGUOUS'] else data.copy()
             if dtype == "float" or dtype == "double":
                 r = libminc.miset_real_value_hyperslab(
                         self.volPointer, mincSizes[dtype]["minc"],
                         ctype_start, ctype_count,
-                        data.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
+                        arr.ctypes.data_as(POINTER(mincSizes[dtype]["ctype"])))
                 testMincReturn(r)
             else:
                 raise NotImplementedError("setting hyperslab with types other than float or double not yet supported")
@@ -343,12 +344,13 @@ class mincVolume(object):
             # in the next libminc call we use the string form of the numpy representation...
             if type(self.dtype) == numpy.dtype:
                 self.dtype = self.get_string_form_of_numpy_dtype(self.dtype)
-                
+            
+            arr = self._data if self._data.flags["C_CONTIGUOUS"] else self._data.copy()
             
             r = libminc.miset_real_value_hyperslab(
                 self.volPointer, mincSizes[self.dtype]["minc"],
                 misize_t_sizes(), misize_t_sizes(*self.sizes[:]),
-                self._data.ctypes.data_as(POINTER(mincSizes[self.dtype]["ctype"])))
+                arr.ctypes.data_as(POINTER(mincSizes[self.dtype]["ctype"])))
             testMincReturn(r)
             self._data_written_to_file = True
             
