@@ -1,3 +1,11 @@
+New in version 0.54.0
+=====================
+* support non-C-contiguous ndarrays (#37)
+* fix a bug where a volume only written via hyperslab API would be deleted on `closeVolume` (#32)
+* remove old conditional code to support Python 2 (not supported since 0.53)
+* substantial cleanup of the tests; new tests for non-contiguous arrays
+* various minor code improvements
+
 New in version 0.53.3
 =====================
 * bugfix where valid range would be set incorrectly for label files (pyminc/pull/31)
