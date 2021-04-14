@@ -120,7 +120,7 @@ class c_py3_unicode_p(c_char_p):
     def from_param(arg):
         return c_char_p.from_param(arg.encode(encoding))
 
-c_stringy = c_py3_unicode_p if sys.version_info.major >= 3 else c_char_p
+c_stringy = c_py3_unicode_p
 
 MI_ROOT_PATH_FOR_IMAGE_ATTR=c_stringy("/minc-2.0/image/0/image")
 
