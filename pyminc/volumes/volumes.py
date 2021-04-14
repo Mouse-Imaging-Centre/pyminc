@@ -318,6 +318,7 @@ class mincVolume(object):
                 testMincReturn(r)
             else:
                 raise NotImplementedError("setting hyperslab with types other than float or double not yet supported")
+            self._data_written_to_file = True
             if self.debug:
                 print("after setting of hyperslab")
 
