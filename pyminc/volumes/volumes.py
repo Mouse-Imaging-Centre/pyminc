@@ -374,9 +374,9 @@ class mincVolume(object):
             libminc_version_minor = int(libminc_version.split('.')[1])
             libminc_version_patch = int(libminc_version.split('.')[2])
             # this "correct" version 3.5.99 is fictive, and to be determined.
-            if (libminc_version_major >= 3 and
-                libminc_version_minor >= 5 and
-                libminc_version_patch >= 99):
+            if (libminc_version_major >= 2 and
+                libminc_version_minor >= 4 and
+                libminc_version_patch >= 3):
                 r = libminc.miset_attr_values(self.volPointer,
                                               MI_TYPE_STRING,
                                               c_stringy("image"),
