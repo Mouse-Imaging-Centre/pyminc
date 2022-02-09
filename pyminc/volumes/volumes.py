@@ -341,8 +341,7 @@ class mincVolume(object):
                 raise NoDataTypeException
             self.setVolumeRanges(self._data)
 
-            # in the next libminc call we use the string form of the numpy representation...
-            if type(self.dtype) == numpy.dtype:
+            if type(self.dtype) != str:
                 self.dtype = self.get_string_form_of_numpy_dtype(self.dtype)
 
             arr = self._data if self._data.flags["C_CONTIGUOUS"] else self._data.copy()
