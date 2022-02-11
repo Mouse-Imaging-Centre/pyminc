@@ -1,23 +1,15 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from __future__ import print_function
-# import minc definitions
-from pyminc.volumes.libpyminc2 import *
-from pyminc.volumes.volumes import *
+
+from argparse import ArgumentParser
 from sys import argv
 import time
-from optparse import OptionParser
-               
+
+from pyminc.volumes.libpyminc2 import *
+from pyminc.volumes.volumes import *
+
 
 def minc_test(input, method, output):
-
-   if method in ["weave", "blitz"]:
-       try:
-           from scipy import weave
-           from scipy.weave import converters
-       except ImportError:
-           print("method '%s' not available: " % method, file=sys.stderr)
-           raise
 
    # create a new mihandle and open a volume
    starttime = time.clock()
@@ -76,31 +68,6 @@ def minc_test(input, method, output):
                                    narr[2:,1:-1,1:-1] + 
                                    narr[1:-1,2:,1:-1] + 
                                    narr[1:-1,1:-1,2:]) / 6
-       elif method == "blitz":
-          code = "narr[1:-1,1:-1,1:-1] = (narr[0:-2,1:-1,1:-1] + "\
-                                          "narr[1:-1,0:-2,1:-1] + "\
-                                          "narr[1:-1,1:-1,0:-2] + "\
-                                          "narr[2:,1:-1,1:-1] + "\
-                                          "narr[1:-1,2:,1:-1] + "\
-                                          "narr[1:-1,1:-1,2:]) / 6"
-          weave.blitz(code, check_size=0)
-       elif method == "weave":
-          code = """
-#line 90 "pyminc_test2.py"
-for (int x=1; x<nx-1; ++x) {
-  for (int y=1; y<ny-1; ++y) {
-    for (int z=1; z<nz-1; ++z) {
-       narr(x,y,z) = (narr(x-1,y,z) + narr(x+1,y,z) + 
-                      narr(x,y-1,z) + narr(x,y+1,z) + 
-                      narr(x,y,z-1) + narr(x,y,z+1)) / 6;
-    }
-  }
-}
-"""
-          nx,ny,nz = s[0],s[1],s[2]
-          weave.inline(code, ['narr', 'nx', 'ny', 'nz'], 
-                       type_converters=converters.blitz,
-                       compiler="gcc")
        else:
           raise ValueError("unknown method: %s" % method)
 
@@ -152,8 +119,12 @@ for (int x=1; x<nx-1; ++x) {
    libminc.miclose_volume(new_volume)
 
 if __name__ == "__main__":
-   print(len(argv))
-   if len(argv) < 4:
-      print("Perform some very basic operations using the pyminc library. Example usage:\n\npyminc_test2.py input_file.mnc [method] output_file.mnc \n\nWhere method can be: numpy, blitz or weave\n")
-      exit(1)
-   minc_test(argv[1], argv[2], argv[3])
+    main(argv[1:])
+
+def main(args):
+    p = ArgumentParser(help = "Perform some very basic operations using the pyminc library.")
+    p.add_argument("infile")  # TODO add ".mnc" to example
+    p.add_argument("method", choices = ["numpy"])  # TODO add numba, cython, pytorch
+    p.add_argument("outfile")
+    args = p.parse_args()
+    minc_test(input = args.infile, method = args.method, output = args.outfile)
