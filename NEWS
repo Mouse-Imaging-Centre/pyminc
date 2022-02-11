@@ -1,3 +1,8 @@
+New in version 0.55
+===================
+* mincVolume.writeFile: don't choke on some numpy dtypes
+* remove obsolete `weave` code from pyminc_test2.py
+
 New in version 0.54.0
 =====================
 * support non-C-contiguous ndarrays (#37)
