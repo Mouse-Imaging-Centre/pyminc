@@ -1,18 +1,17 @@
-import numpy as N
+import numpy as np
 
-class HyperSlab(N.ndarray):
+
+class HyperSlab(np.ndarray):
     """an ndarray with location and voxel-to-world mapping information"""
-    def __new__(subtype, data, start=None, separations=None, 
+    def __new__(cls, data, start=None, separations=None,
                 count=None, dimnames=None, dtype=None):
-        #print("DATA", data)
-        subarr = 0
-        if isinstance(data, N.ndarray):
+
+        if isinstance(data, np.ndarray):
             subarr = data.view(HyperSlab)
         else:
             raise TypeError("Can't handle non-ndarrays for the moment")
         # transform subarr into a hyperslab using view method
-        #subarr = subarr.view(subtype)
-        #print("SUBARR", subarr)
+        #subarr = subarr.view(cls)
         if start is not None:
             subarr.start = start
         elif hasattr(data, 'start'):
@@ -40,11 +39,12 @@ class HyperSlab(N.ndarray):
         self.separations = getattr(obj, 'separations', [])
         self.dimnames = getattr(obj, 'dimnames', [])
         self.count = getattr(obj, 'count', [])
+
     def __repr__(self):
         desc = """
         array(data=
               %(data)s,
         start=%(start)s, count=%(count)s,
         separations=%(seps)s, dimnames=%(dims)s"""
-        return desc % {'data':str(self), 'start':self.start, 'count':self.count,
-                       'seps':self.separations, 'dims':self.dimnames}
+        return desc % {'data': str(self), 'start': self.start, 'count': self.count,
+                       'seps': self.separations, 'dims': self.dimnames}

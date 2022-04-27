@@ -1,4 +1,18 @@
-from .libpyminc2 import *
+from ctypes import (byref,
+                    c_double, c_int,
+                    c_char_p, c_void_p,
+                    POINTER, create_string_buffer)
+from .libpyminc2 import (c_stringy,
+                         direction_cosines_array, GeneralTransform, libminc,
+                         mibool,
+                         mihandle,
+                         misize_t, misize_t_sizes, mincSizes,
+                         mitype_t, MI_TYPE_STRING,
+                         MI_DIMATTR_ALL, MI_DIMCLASS_ANY,
+                         MI_DIMORDER_APPARENT,
+                         voxel_coord, world_coord, MI_CLASS_REAL, MI2_OPEN_RDWR, MI2_OPEN_READ, MI_DIMCLASS_SPATIAL,
+                         MI_DIMCLASS_RECORD, MI_DIMATTR_REGULARLY_SAMPLED, int_sizes, MI_ROOT_PATH_FOR_IMAGE_ATTR,
+                         dimensions, double_sizes, encoding, c_py3_unicode_p)
 from .hyperslab import HyperSlab
 import operator
 import os
@@ -8,6 +22,7 @@ from functools import reduce
 import subprocess
 import numpy as numpy
 
+
 class mincException(Exception): pass
 class NoDataException(Exception): pass
 class IncorrectDimsException(Exception): pass
@@ -16,9 +31,11 @@ class mincTypeNotDetermined(Exception): pass
 class volumeTypeNotDetermined(Exception): pass
 class directionCosinesNotDetermined(Exception): pass
 
+
 def testMincReturn(value):
     if value < 0:
         raise mincException
+
 
 def getDtype(data):
     """get the mincSizes datatype based on a numpy array"""
@@ -29,10 +46,10 @@ def getDtype(data):
             break
     return dtype
 
+
 def transform_multiple_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, use_inverse=False):
     # make sure we have the same number of input coordinates for x y and z
-    if (len(x_coor) != len(y_coor) or
-        len(y_coor) != len(z_coor) ):
+    if len(x_coor) != len(y_coor) or len(y_coor) != len(z_coor):
         raise ValueError("The function transform_multiple_xyz_coordinates_using_xfm was provided with incorrect coordinate data. The length of the lists differ.")
 
     # read the transformation file
@@ -69,14 +86,14 @@ def transform_multiple_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z
     # return transformed values
     return (ret_x, ret_y, ret_z)
 
-# access to libminc functions used to transform coordinates (x,y,z)
+
 def transform_xyz_coordinates_using_xfm(xfm_filename, x_coor, y_coor, z_coor, use_inverse=False):
     ret_x_array, rey_y_array, rey_z_array = transform_multiple_xyz_coordinates_using_xfm(xfm_filename,
                                                                                          [x_coor],
                                                                                          [y_coor],
                                                                                          [z_coor],
                                                                                          use_inverse=use_inverse)
-    return (ret_x_array[0], rey_y_array[0], rey_z_array[0])
+    return ret_x_array[0], rey_y_array[0], rey_z_array[0]
 
 
 class mincVolume(object):
@@ -450,8 +467,8 @@ class mincVolume(object):
 
     def setVolumeRange(self, volume_max, volume_min):
         """This method sets the range (min and max) scale value for the volume. Note that this method only works if volume is not slice scaled."""
-        status = libminc.miset_volume_range(self.volPointer, \
-                                                volume_max, volume_min)
+        status = libminc.miset_volume_range(self.volPointer,
+                                            volume_max, volume_min)
         testMincReturn(status)
 
     def getVolumeRange(self):
@@ -461,41 +478,39 @@ class mincVolume(object):
         if self.isSliceScaled:
             if self.debug:
                 print("Slice scaling is enabled, will determine the range based on the data loaded")
-            if self.dataLoaded:
-                return (float(self.data.min()), float(self.data.max()))
-            else:
-                self.loadData
-            return (float(self.data.min()), float(self.data.max()))
+            if not self.dataLoaded:
+                self.loadData()
+            return float(self.data.min()), float(self.data.max())
         else:
             volume_max, volume_min = c_double(), c_double()
             status = libminc.miget_volume_range(self.volPointer,
                                                 byref(volume_max),
                                                 byref(volume_min))
             testMincReturn(status)
-            return (volume_min.value, volume_max.value)
+            return volume_min.value, volume_max.value
 
     def isSliceScaled(self):
         "return slice_scaling_flag for volume"
         scaling_flag = mibool()
-        status = libminc.miget_slice_scaling_flag(self.volPointer, \
-                                    byref(scaling_flag))
+        status = libminc.miget_slice_scaling_flag(self.volPointer,
+                                                  byref(scaling_flag))
         testMincReturn(status)
         return scaling_flag.value
 
 
     def setValidRange(self, valid_max, valid_min):
         """This method sets the valid range (min and max) for the datatype."""
-        status = libminc.miset_volume_valid_range(self.volPointer, \
-                                                valid_max, valid_min)
+        status = libminc.miset_volume_valid_range(self.volPointer,
+                                                  valid_max, valid_min)
         testMincReturn(status)
 
     def getValidRange(self):
         """This method sets the valid range for the volume datatype"""
         valid_max, valid_min = c_double(), c_double()
-        status = libminc.miget_volume_valid_range(self.volPointer, \
-                                    byref(valid_max), byref(valid_min))
+        status = libminc.miget_volume_valid_range(self.volPointer,
+                                                  byref(valid_max), byref(valid_min))
         testMincReturn(status)
-        return (valid_max.value, valid_min.value)
+        return valid_max.value, valid_min.value
 
     def getSizes(self):
         "return volume sizes"
@@ -526,9 +541,9 @@ class mincVolume(object):
                 found_type = mS_type
                 break
         if not found_type:
-            sys.stderr.write("The data type of the MINC file is not supported by pyminc yet. "
+            sys.stderr.write(f"The data type '{minc_type.value}' of the MINC file is not supported by pyminc yet. "
                              "Please submit an issue on GitHub: https://github.com/Mouse-Imaging-Centre/pyminc/issues "
-                             "Value of the MINC type that is not supported: ", str(minc_type.value))
+                             "Value of the MINC type that is not supported: ")
             raise mincTypeNotDetermined
         return found_type
 
@@ -619,7 +634,7 @@ class mincVolume(object):
         if self.debug:
             print("dimnames: " + str(self.dimnames))
         try:
-            self.history = self.getHistory(size=999999)
+            self.history = self.getHistory(size=999999)  # FIXME ...
         except mincException:
             # some programs do not properly initialize the minc history attribute
             # (for example RMINC (july 2014)). Running getHistory() on one of those files will
@@ -783,7 +798,7 @@ class mincVolume(object):
         self.closeVolume()
 
     # define access functions for getting and setting the data attribute
-    data = property(getdata,setdata,None,None)
+    data = property(getdata, setdata, None, doc="The voxel data of the volume")
 
     #adding history to minc files, history should be a string
     def appendAndWriteHistory(self, history):
@@ -807,17 +822,17 @@ class mincVolume(object):
         return history
 
     # set apparent dimension orders
-    def setApparentDimensionOrder(self, size=None, name=[]):
-        array_type = c_unicode_p * size
+    def setApparentDimensionOrder(self, name, size=None):
+        array_type = c_py3_unicode_p * size
         names = array_type()
         for i in range(size):
-            if (len(name.split(',')[i]) == 1):
+            if len(name.split(',')[i]) == 1:
                 names[i] = name.split(',')[i] + 'space'
             else:
                 names[i] = name.split(',')[i]
-        r = libminc.miset_apparent_dimension_order_by_name(self.volPointer,size,names)
+        r = libminc.miset_apparent_dimension_order_by_name(self.volPointer, size, names)
         testMincReturn(r)
-    #copy attributes from path 
+    # copy attributes from path
     def copyAttributes(self, otherInstance, path=None):
         r = libminc.micopy_attr(otherInstance.volPointer, path, self.volPointer)
         testMincReturn(r)

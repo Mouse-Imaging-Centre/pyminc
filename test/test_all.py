@@ -1,6 +1,9 @@
-from pyminc.volumes.volumes import *
-from pyminc.volumes.factory import *
-from pyminc.volumes.libpyminc2 import *
+from pyminc.volumes.volumes import (mincException, mincVolume, transform_xyz_coordinates_using_xfm, NoDataException)
+from pyminc.volumes.factory import (volumeFromData,
+                                    volumeFromDescription,
+                                    volumeFromFile,
+                                    volumeFromInstance,
+                                    volumeLikeFile)
 
 import numpy as np
 import os
@@ -15,19 +18,21 @@ from parameterized import parameterized
 
 @pytest.fixture
 def outputFilename():
-  f = tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc", delete=False)
-  yield f.name
-  try:
-    if os.path.exists(f.name):  # not actually needed but otherwise Pytest reports all the exceptions
-      os.remove(f.name)
-  except FileNotFoundError:
-    # Pyminc didn't write data to this file.  This is fine.
-    # (We could have separate fixtures for the case when the file should exist or not,
-    # but this seems like testing in a few tests should be sufficient)
-    pass
+    f = tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc", delete=False)
+    yield f.name
+    try:
+        if os.path.exists(f.name):  # not actually needed but otherwise Pytest reports all the exceptions
+            os.remove(f.name)
+    except FileNotFoundError:
+        # Pyminc didn't write data to this file.  This is fine.
+        # (We could have separate fixtures for the case when the file should exist or not,
+        # but this seems like testing in a few tests should be sufficient)
+        pass
+
 
 def tmp_mnc_file():
-  return tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc", delete=False)
+    return tempfile.NamedTemporaryFile(prefix="test-out-", suffix=".mnc", delete=False)
+
 
 emptyFilename = tempfile.NamedTemporaryFile(prefix="test-empty-", suffix=".mnc").name
 newFilename = tempfile.NamedTemporaryFile(prefix="test-new-volume-", suffix=".mnc").name

@@ -1,13 +1,15 @@
 """factories for creating mincVolumes"""
 
-from .volumes import mincException, mincVolume, getDtype, transform_xyz_coordinates_using_xfm, transform_multiple_xyz_coordinates_using_xfm
+from .volumes import mincVolume, getDtype
+
 
 def volumeFromFile(filename, dtype="double", readonly=True, labels=False):
     """creates a new mincVolume from existing file."""
     v = mincVolume(filename=filename, dtype=dtype, readonly=readonly, labels=labels)
     v.openFile()
-    return(v)
-    
+    return v
+
+
 def volumeFromInstance(volInstance, outputFilename, dtype="double", data=False,
                        dims=None, volumeType=None, path=False, labels=False):
     """creates new mincVolume from another mincVolume"""
@@ -24,7 +26,8 @@ def volumeFromInstance(volInstance, outputFilename, dtype="double", data=False,
     if path:
         v.copyAttributes(volInstance, path)
 
-    return(v)
+    return v
+
 
 def volumeLikeFile(likeFilename, outputFilename, dtype="double", volumeType=None,
                    labels=False, data=False):
@@ -34,7 +37,8 @@ def volumeLikeFile(likeFilename, outputFilename, dtype="double", volumeType=None
                            dtype=dtype, volumeType=volumeType,
                            labels=labels, data=data)
     lf.closeVolume()
-    return(v)
+    return v
+
 
 def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volumeType="ushort",
                           dtype="double", labels=False,
@@ -47,7 +51,8 @@ def volumeFromDescription(outputFilename, dimnames, sizes, starts, steps, volume
                           x_dir_cosines, y_dir_cosines, z_dir_cosines)
     v.createVolumeHandle(volumeType)
     v.createVolumeImage()
-    return(v)
+    return v
+
 
 def volumeFromData(outputFilename, data, dimnames=("xspace", "yspace", "zspace"),
                    starts=(0,0,0), steps=(1,1,1),
