@@ -1,3 +1,12 @@
+New in version 0.56
+===================
+* revert a commit (#31) causing incorrect scaling of label files
+* general code cleanup
+* add Github actions:
+  * test on pull/pr to main/develop
+  * publish to PyPI on release
+* drop support for unmaintained Python versions (3.5 and 3.6)
+
 New in version 0.55
 ===================
 * mincVolume.writeFile: don't choke on some numpy dtypes
