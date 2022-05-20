@@ -6,15 +6,22 @@ from ctypes import (cdll,
                     c_char_p, c_void_p, POINTER, Structure)
 import locale
 import sys
+import os
 
 try:
-    libminc = cdll.LoadLibrary("libminc2.dylib")
-except OSError:
+    libminc = cdll.LoadLibrary(os.getenv('MINC_TOOLKIT') + "/lib/libminc2.dylib")
+except (OSError, TypeError):
     try:
-        libminc = cdll.LoadLibrary("libminc2.so")
+        libminc = cdll.LoadLibrary("libminc2.dylib")
     except OSError:
-        sys.stderr.write("Something went wrong loading shared libraries ...")
-        raise
+        try:
+            libminc = cdll.LoadLibrary(os.getenv('MINC_TOOLKIT') + "/lib/libminc2.so")
+        except (OSError, TypeError):
+            try:
+                libminc = cdll.LoadLibrary("libminc2.so")
+            except OSError:
+                sys.stderr.write("Something went wrong loading shared libraries ...")
+                raise
 
 
 # sizes used by MINC and numpy
@@ -91,8 +98,8 @@ MI_TYPE_FCOMPLEX = c_int(1002)  # < 32-bit floating point complex
 MI_TYPE_DCOMPLEX = c_int(1003)  # < 64-bit floating point complex
 MI_TYPE_UNKNOWN  = c_int(-1)    # < when the type is a record
 
-# mitype_t is an enum in libminc (libsrc2/minc2_structs.h) 
-# since it can be negative as well (-1 for MI_TYPE_UNKNOWN) 
+# mitype_t is an enum in libminc (libsrc2/minc2_structs.h)
+# since it can be negative as well (-1 for MI_TYPE_UNKNOWN)
 # this reverts to c_int
 mitype_t = c_int
 
@@ -135,7 +142,7 @@ c_stringy = c_py3_unicode_p
 MI_ROOT_PATH_FOR_IMAGE_ATTR = c_stringy("/minc-2.0/image/0/image")
 
 
-# python declaration of the VIO_Transform struct 
+# python declaration of the VIO_Transform struct
 class Transform(Structure):
     pass
 
@@ -143,7 +150,7 @@ class Transform(Structure):
 Transform._fields_ = [("m",                  (c_double * 4) * 4)]
 
 
-# python declaration of the VIO_General_transform struct 
+# python declaration of the VIO_General_transform struct
 class GeneralTransform(Structure):
     pass
 
@@ -173,7 +180,7 @@ libminc.miget_volume_dimensions.argtypes = [mihandle, c_int, c_int, c_int,
                                             c_int, dimensions]
 libminc.miget_dimension_sizes.argtypes = [dimensions, misize_t, int_sizes]
 libminc.miget_dimension_name.argtypes = [c_void_p, POINTER(c_stringy)]
-libminc.miget_dimension_separations.argtypes = [dimensions, c_int, misize_t, 
+libminc.miget_dimension_separations.argtypes = [dimensions, c_int, misize_t,
                                                 double_sizes]
 libminc.miget_dimension_starts.argtypes = [dimensions, c_int, misize_t,
                                            double_sizes]
@@ -203,7 +210,7 @@ libminc.miset_dimension_start.argtypes = [c_void_p, c_double]
 # adding history to minc files
 libminc.miadd_history_attr.argtypes = [mihandle, c_uint, c_void_p]
 # retrieve history of file to append to history of new file
-libminc.miget_attr_values.argtypes = [mihandle, c_int, c_stringy, c_stringy, c_uint, c_void_p] 
+libminc.miget_attr_values.argtypes = [mihandle, c_int, c_stringy, c_stringy, c_uint, c_void_p]
 # apparent dimension order
 libminc.miset_apparent_dimension_order_by_name.argtypes = [mihandle, c_int, POINTER(c_stringy)]
 # copying attributes in path from one file to another
