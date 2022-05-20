@@ -1,3 +1,9 @@
+New in version 0.57
+===================
+* support use of MINC_TOOLKIT environment variable to indicate libminc2.so location
+  (removing need to set LD_LIBRARY_PATH or similar)
+* improve README
+
 New in version 0.56
 ===================
 * revert a commit (#31) causing incorrect scaling of label files
