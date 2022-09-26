@@ -8,20 +8,26 @@ import locale
 import sys
 import os
 
-try:
-    libminc = cdll.LoadLibrary(os.getenv('MINC_TOOLKIT') + "/lib/libminc2.dylib")
-except (OSError, TypeError):
-    try:
-        libminc = cdll.LoadLibrary("libminc2.dylib")
-    except OSError:
+
+def get_libminc():
+
+    minc_toolkit = os.getenv('MINC_TOOLKIT')
+    dll_paths = ((os.path.join(minc_toolkit, "/lib/libminc2"),) if minc_toolkit is not None else ()) + ('libminc2',)
+
+    libminc = None
+    for f in [f"{p}.{ext}" for p in dll_paths for ext in ('so', 'dylib')]:
         try:
-            libminc = cdll.LoadLibrary(os.getenv('MINC_TOOLKIT') + "/lib/libminc2.so")
-        except (OSError, TypeError):
-            try:
-                libminc = cdll.LoadLibrary("libminc2.so")
-            except OSError:
-                sys.stderr.write("Something went wrong loading shared libraries ...")
-                raise
+            libminc = cdll.LoadLibrary(f)
+            break
+        except OSError:
+            pass
+    if libminc is None:
+        raise OSError("For some reason couldn't load a libminc2 .so/DLL from $MINC_TOOLKIT/lib or your system's DLL path")
+
+    return libminc
+
+
+libminc = get_libminc()
 
 
 # sizes used by MINC and numpy
